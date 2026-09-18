@@ -37,6 +37,11 @@ FORBIDDEN_FILENAMES = {
     "submission.parquet",
 }
 
+PRIVATE_CONTEXT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("local Unix home path", re.compile(r"(?<![A-Za-z0-9_])/(?:home|Users)/[^/\\s]+/")),
+    ("local Windows home path", re.compile(r"(?i)\\b[A-Z]:\\\\Users\\\\[^\\\\\\r\\n]+\\\\")),
+)
+
 SECRET_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("OpenAI-style API key", re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b")),
     ("GitHub token", re.compile(r"\bgh[pousr]_[A-Za-z0-9]{20,}\b")),
@@ -103,7 +108,12 @@ def content_violations(data: bytes) -> list[str]:
         text = data.decode("utf-8")
     except UnicodeDecodeError:
         return []
-    return [label for label, pattern in SECRET_PATTERNS if pattern.search(text)]
+    problems = [
+        label
+        for label, pattern in (*PRIVATE_CONTEXT_PATTERNS, *SECRET_PATTERNS)
+        if pattern.search(text)
+    ]
+    return problems
 
 
 def parse_args() -> argparse.Namespace:
