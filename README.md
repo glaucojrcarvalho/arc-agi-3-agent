@@ -2,7 +2,7 @@
 
 Experimental open-source agent research for **ARC-AGI-3**, focused on online adaptation, environment understanding, transition learning, and efficient action selection in previously unseen interactive tasks.
 
-> Status: Phase 0 — reproducible baseline and submission-pipeline validation, with tested transition/action infrastructure prepared for controlled later experiments.
+> Status: Phase 0 local baseline completed. EXP-000 provides a reproducible control for model-driven and transition-aware experiments; competition submission remains separately gated by the documented public-code requirements.
 
 ## Research questions
 
@@ -34,9 +34,11 @@ Planning, reflection, object-centric representations, and explicit world models 
 
 ## Current baseline
 
-`agent/my_agent.py` contains `EXP-000`, a reproducible random policy used only to verify the complete local and Kaggle execution pipeline. It does not contain game-specific heuristics or a learned policy.
+`agent/my_agent.py` contains `EXP-000`, a reproducible random policy used as the control for the research program. It does not contain game-specific heuristics or a learned policy.
 
-The next milestone is to run this baseline through the official environment, capture exact environment provenance, record the actual result, and only then promote a model-driven policy to the active agent.
+The full local baseline completed successfully with an aggregate score of `0.08612196364871753`. The evaluated artifact hash and exact project/starter/framework/runtime provenance are recorded in `experiments/results.csv`. This is a local baseline result, not a Kaggle leaderboard score.
+
+The next research milestone is `EXP-001`: a direct model policy with minimal scaffolding, evaluated against this control before adding persistent memory or planning.
 
 Reusable state differencing, transition memory, and structured-action validation primitives are implemented under `src/arc_agent/` and covered by unit tests. They are intentionally not enabled in `EXP-000`, preserving a clean control for later ablations.
 

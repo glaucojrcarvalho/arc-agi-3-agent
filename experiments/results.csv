@@ -1,2 +1,2 @@
 id,status,revision,project_dirty,starter_revision,framework_revision,arc_agi_version,python_version,agent_sha256,model,configuration,score,actions,runtime,notes
-EXP-000,pending,,,,,,,,none,reproducible-random-baseline,,,,End-to-end pipeline validation baseline
+EXP-000,completed,8cdb4257c47f4e02cded1b535ce8e0fcf362d7ca,false,eeb1535404f321d280a8f9194bbc1d7aca5f05fc,4743e7d0aaae0ded0d98a89a7e282e63564cd58b,0.9.9,3.12.13,2732d0cbdb11b23ab65edeb2486fd8c8a08637df669229f401f91d598a6e9b76,none,reproducible-random-baseline,0.08612196364871753,,,Full local baseline across available ARC environments; no Kaggle submission recorded
