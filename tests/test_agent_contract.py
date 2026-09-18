@@ -1,10 +1,13 @@
 from __future__ import annotations
 
 import importlib
+import json
 import sys
 import types
 import unittest
 from enum import IntEnum
+
+from arc_agent.model import ModelClientError
 
 
 class FakeGameState(IntEnum):
@@ -41,15 +44,35 @@ class FakeFrameData:
         state: FakeGameState = FakeGameState.NOT_FINISHED,
         frame: list[list[list[int]]] | None = None,
         available_actions: list[object] | None = None,
+        levels_completed: int = 0,
     ) -> None:
         self.state = state
         self.frame = frame if frame is not None else [[[0]]]
         self.available_actions = available_actions or []
+        self.levels_completed = levels_completed
 
 
 class FakeAgent:
     def __init__(self, *args, **kwargs) -> None:
         self.game_id = kwargs.get("game_id", "test-game")
+
+
+class FakeModel:
+    model = "test-model"
+
+    def __init__(self, response: str) -> None:
+        self.response = response
+        self.prompts: list[str] = []
+
+    def complete(self, prompt: str) -> str:
+        self.prompts.append(prompt)
+        return self.response
+
+
+class FailingModel(FakeModel):
+    def complete(self, prompt: str) -> str:
+        self.prompts.append(prompt)
+        raise ModelClientError("test transport failure")
 
 
 class AgentContractTests(unittest.TestCase):
@@ -85,49 +108,60 @@ class AgentContractTests(unittest.TestCase):
             else:
                 sys.modules[name] = previous
 
-    def make_agent(self, game_id: str = "test-game"):
-        return self.module.MyAgent(game_id=game_id)
+    def make_agent(self, response: str = '{"action":1,"data":{},"reason":"move"}'):
+        agent = self.module.MyAgent(game_id="test-game")
+        model = FakeModel(response)
+        agent._model = model
+        return agent, model
 
-    def test_resets_when_game_has_not_started(self) -> None:
-        agent = self.make_agent()
+    def test_resets_without_model_call_when_game_has_not_started(self) -> None:
+        agent, model = self.make_agent()
         frame = FakeFrameData(state=FakeGameState.NOT_PLAYED)
 
         self.assertIs(agent.choose_action([], frame), FakeGameAction.RESET)
+        self.assertEqual(model.prompts, [])
 
-    def test_resets_after_game_over(self) -> None:
-        agent = self.make_agent()
+    def test_resets_without_model_call_after_game_over(self) -> None:
+        agent, model = self.make_agent()
         frame = FakeFrameData(state=FakeGameState.GAME_OVER)
 
         self.assertIs(agent.choose_action([], frame), FakeGameAction.RESET)
+        self.assertEqual(model.prompts, [])
 
     def test_stops_only_on_win(self) -> None:
-        agent = self.make_agent()
+        agent, _ = self.make_agent()
 
         self.assertFalse(
             agent.is_done([], FakeFrameData(state=FakeGameState.NOT_FINISHED))
         )
         self.assertTrue(agent.is_done([], FakeFrameData(state=FakeGameState.WIN)))
 
-    def test_chooses_only_from_available_actions(self) -> None:
-        agent = self.make_agent()
-        frame = FakeFrameData(available_actions=[2])
+    def test_executes_valid_model_action(self) -> None:
+        agent, _ = self.make_agent(
+            '{"action":2,"data":{},"reason":"try action two"}'
+        )
+        frame = FakeFrameData(available_actions=[1, 2])
 
-        self.assertIs(agent.choose_action([], frame), FakeGameAction.ACTION2)
+        action = agent.choose_action([], frame)
 
-    def test_invalid_available_action_ids_are_ignored(self) -> None:
-        agent = self.make_agent()
-        frame = FakeFrameData(available_actions=[999, 1])
+        self.assertIs(action, FakeGameAction.ACTION2)
+        self.assertFalse(action.reasoning["fallback"])
+        self.assertEqual(agent.validation_fallbacks, 0)
 
-        self.assertIs(agent.choose_action([], frame), FakeGameAction.ACTION1)
+    def test_invalid_output_uses_deterministic_legal_fallback(self) -> None:
+        agent, _ = self.make_agent("not-json")
+        frame = FakeFrameData(available_actions=[2, 1])
 
-    def test_boolean_and_non_integer_action_ids_are_ignored(self) -> None:
-        agent = self.make_agent()
-        frame = FakeFrameData(available_actions=[True, "2", 2])
+        action = agent.choose_action([], frame)
 
-        self.assertIs(agent.choose_action([], frame), FakeGameAction.ACTION2)
+        self.assertIs(action, FakeGameAction.ACTION1)
+        self.assertTrue(action.reasoning["fallback"])
+        self.assertEqual(agent.validation_fallbacks, 1)
 
-    def test_complex_action_coordinates_respect_observed_bounds(self) -> None:
-        agent = self.make_agent()
+    def test_complex_action_uses_validated_coordinates(self) -> None:
+        agent, _ = self.make_agent(
+            '{"action":6,"data":{"x":2,"y":1},"reason":"inspect"}'
+        )
         frame = FakeFrameData(
             frame=[[[0, 0, 0], [0, 0, 0]]],
             available_actions=[6],
@@ -136,32 +170,63 @@ class AgentContractTests(unittest.TestCase):
         action = agent.choose_action([], frame)
 
         self.assertIs(action, FakeGameAction.ACTION6)
-        self.assertGreaterEqual(action.action_data["x"], 0)
-        self.assertLess(action.action_data["x"], 3)
-        self.assertGreaterEqual(action.action_data["y"], 0)
-        self.assertLess(action.action_data["y"], 2)
+        self.assertEqual(action.action_data, {"x": 2, "y": 1})
+        self.assertFalse(action.reasoning["fallback"])
 
-    def test_complex_action_coordinates_never_exceed_arc_limit(self) -> None:
-        agent = self.make_agent()
+    def test_invalid_complex_coordinates_fallback_to_origin(self) -> None:
+        agent, _ = self.make_agent(
+            '{"action":6,"data":{"x":99,"y":99},"reason":"inspect"}'
+        )
         frame = FakeFrameData(
-            frame=[[[0] * 80 for _ in range(80)]],
+            frame=[[[0, 0], [0, 0]]],
             available_actions=[6],
         )
 
-        for _ in range(32):
-            action = agent.choose_action([], frame)
-            self.assertLess(action.action_data["x"], 64)
-            self.assertLess(action.action_data["y"], 64)
+        action = agent.choose_action([], frame)
 
-    def test_same_game_id_produces_same_action_sequence(self) -> None:
-        left = self.make_agent("stable-game")
-        right = self.make_agent("stable-game")
-        frame = FakeFrameData(available_actions=[1, 2])
+        self.assertIs(action, FakeGameAction.ACTION6)
+        self.assertEqual(action.action_data, {"x": 0, "y": 0})
+        self.assertTrue(action.reasoning["fallback"])
 
-        left_sequence = [int(left.choose_action([], frame)) for _ in range(8)]
-        right_sequence = [int(right.choose_action([], frame)) for _ in range(8)]
+    def test_prompt_contains_current_state_without_history(self) -> None:
+        agent, model = self.make_agent()
+        frame = FakeFrameData(
+            frame=[[[1, 2], [3, 4]]],
+            available_actions=[1],
+            levels_completed=2,
+        )
 
-        self.assertEqual(left_sequence, right_sequence)
+        agent.choose_action([FakeFrameData()], frame)
+        prompt = json.loads(model.prompts[0])
+
+        self.assertEqual(prompt["frame"], [[[1, 2], [3, 4]]])
+        self.assertEqual(prompt["levels_completed"], 2)
+        self.assertNotIn("history", prompt)
+        self.assertNotIn("transitions", prompt)
+
+    def test_malformed_available_action_ids_are_ignored(self) -> None:
+        agent, _ = self.make_agent(
+            '{"action":2,"data":{},"reason":"move"}'
+        )
+        frame = FakeFrameData(available_actions=[True, "2", 999, 2])
+
+        self.assertIs(agent.choose_action([], frame), FakeGameAction.ACTION2)
+
+    def test_no_executable_actions_fails_fast(self) -> None:
+        agent, model = self.make_agent()
+        frame = FakeFrameData(available_actions=[])
+
+        with self.assertRaises(RuntimeError):
+            agent.choose_action([], frame)
+        self.assertEqual(model.prompts, [])
+
+    def test_transport_failure_is_not_silently_converted_to_fallback(self) -> None:
+        agent = self.module.MyAgent(game_id="test-game")
+        agent._model = FailingModel("")
+        frame = FakeFrameData(available_actions=[1])
+
+        with self.assertRaises(ModelClientError):
+            agent.choose_action([], frame)
 
 
 if __name__ == "__main__":
