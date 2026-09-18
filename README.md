@@ -2,18 +2,18 @@
 
 Experimental open-source agent research for **ARC-AGI-3**, focused on online adaptation, environment understanding, transition learning, and efficient action selection in previously unseen interactive tasks.
 
-> Status: early research and baseline implementation.
+> Status: Phase 0 — reproducible baseline and submission-pipeline validation, with tested transition/action infrastructure prepared for controlled later experiments.
 
-## Goals
+## Research questions
 
-This repository explores a small set of questions:
+This repository explores a deliberately small set of questions:
 
 - Can explicit state-transition memory improve adaptation to unseen tasks?
 - Can an agent distinguish useful exploration from goal-directed actions?
 - How much environment representation should be deterministic versus delegated to a multimodal model?
 - Can learned hypotheses reduce unnecessary actions while preserving task success?
 
-## Initial approach
+## Experimental approach
 
 The first iterations intentionally keep the architecture small:
 
@@ -30,45 +30,121 @@ Transition Memory
     └──────────────→ next observation
 ```
 
-Additional components such as planning, reflection, object-centric representations, and explicit world models will only be added when experiments justify them.
+Planning, reflection, object-centric representations, and explicit world models are only introduced when measured failure modes justify them.
 
-## Experiment philosophy
+## Current baseline
 
-Changes should be evaluated incrementally. Each meaningful experiment should record:
+`agent/my_agent.py` contains `EXP-000`, a reproducible random policy used only to verify the complete local and Kaggle execution pipeline. It does not contain game-specific heuristics or a learned policy.
 
-- experiment identifier;
-- model and configuration;
-- code revision;
-- evaluation score;
-- action efficiency when available;
-- runtime / resource notes;
-- concise technical observations.
+The next milestone is to run this baseline through the official environment, capture exact environment provenance, record the actual result, and only then promote a model-driven policy to the active agent.
 
-The objective is to understand *why* a component helps or hurts rather than accumulate agent complexity.
+Reusable state differencing, transition memory, and structured-action validation primitives are implemented under `src/arc_agent/` and covered by unit tests. They are intentionally not enabled in `EXP-000`, preserving a clean control for later ablations.
 
-## Repository structure
+Transition metrics distinguish **effect** from **progress**. A state-changing action may be effectful without being beneficial; level-count increases are tracked separately as explicit progress.
 
-The repository will evolve toward the following structure as the implementation grows:
+## Submission packaging
 
-```text
-src/arc_agent/      Agent implementation
-experiments/        Reproducible experiment definitions and results
-tests/              Automated tests
-scripts/            Local evaluation and utility scripts
-docs/               Architecture and research notes
-notebooks/           Deliberately published research notebooks
+The official ARC-AGI-3 starter packages only `agent/my_agent.py` into its generated notebook. It does not automatically include this repository's `src/arc_agent/` package.
+
+Build the standalone artifact before copying the agent into the starter:
+
+```bash
+python scripts/build_standalone_agent.py
 ```
 
-Competition datasets, credentials, generated submission artifacts, local recordings, model checkpoints, and other non-source artifacts are intentionally excluded from version control.
+The generated `dist/my_agent.py` embeds `src/arc_agent/` only when the active agent imports it. For `EXP-000`, the output remains byte-for-byte identical to the source baseline.
+
+See [`docs/setup.md`](docs/setup.md) for the complete workflow.
 
 ## Reproducibility
 
-The project will prefer reproducible configurations and documented experiments over unpublished one-off tuning. Public results should include enough technical context to understand the evaluated approach without exposing credentials or redistributing competition artifacts unnecessarily.
+Evaluated experiments record the project revision, exact upstream starter/framework revisions, the **starter runtime's** Python and `arc-agi` versions, whether the project working tree was dirty, and the SHA-256 of the standalone agent artifact actually evaluated.
+
+Capture that provenance immediately before an evaluated run:
+
+```bash
+python scripts/capture_environment.py \
+  --starter ../ARC-AGI-3-Kaggle-Starter
+```
+
+The command fails with incomplete provenance if the starter runtime, framework checkout, or standalone agent artifact cannot be identified. Results are recorded in [`experiments/results.csv`](experiments/results.csv); scores are only added after an actual run.
+
+## Public competition code
+
+Kaggle's competition rules permit public Competition Code, but require code shared publicly during the competition to also be shared on the competition's Kaggle discussion forum or associated notebooks. This repository therefore needs a corresponding ARC-AGI-3 Kaggle disclosure; once posted, that reference will be linked here.
+
+## Development workflow
+
+`main` is the stable research line. Normal implementation happens on short-lived branches and enters through pull requests. Local Git worktrees are recommended when multiple experiments or infrastructure tasks are active in parallel.
+
+See [`docs/development.md`](docs/development.md) for the branch/worktree conventions and PR checklist.
+
+## Repository structure
+
+```text
+agent/
+└── my_agent.py                 Current EXP-000 agent
+
+src/arc_agent/
+├── actions.py                  Structured model-output validation
+├── memory.py                   Bounded transition memory
+└── state.py                    Frame fingerprints and state differencing
+
+tests/
+├── test_actions.py
+├── test_agent_contract.py      Active agent behavior against ARC-like stubs
+├── test_capture_environment.py Environment provenance validation
+├── test_memory.py
+├── test_packaging.py           Standalone bundle/import validation
+└── test_state.py
+
+experiments/
+└── results.csv                 Experiment registry and provenance
+
+docs/
+├── development.md              PR/worktree workflow
+├── model-baseline.md           Planned EXP-001 model baseline
+├── publication-policy.md       Public-repository rules
+├── research-plan.md            Incremental research program
+└── setup.md                    Local starter integration
+
+scripts/
+├── build_standalone_agent.py   One-file Kaggle-compatible packager
+├── capture_environment.py      Public-safe experiment provenance capture
+└── public_preflight.py         Staged/all-file safety scanner
+
+.github/workflows/
+└── ci.yml                      Safety, syntax, and unit-test checks
+```
+
+Competition datasets, credentials, generated submission artifacts, standalone build outputs, local recordings, model checkpoints, and other non-source artifacts are intentionally excluded from version control.
+
+Before publishing changes, follow [`docs/publication-policy.md`](docs/publication-policy.md) and run:
+
+```bash
+python scripts/public_preflight.py
+```
+
+CI additionally scans all tracked files, compiles Python sources, and runs unit tests on every push and pull request.
+
+## Research plan
+
+The planned progression is documented in [`docs/research-plan.md`](docs/research-plan.md):
+
+1. pipeline baseline;
+2. direct model policy;
+3. transition awareness;
+4. hypothesis-driven exploration;
+5. structured planning only when supported by measured failure modes.
+
+The current model-baseline candidate and promotion gates are documented separately in [`docs/model-baseline.md`](docs/model-baseline.md).
 
 ## References
 
 - ARC Prize: https://arcprize.org/
 - ARC-AGI-3 Kaggle competition: https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3
+- ARC-AGI-3 competition rules: https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3/rules
+- ARC-AGI-3 agent framework: https://github.com/arcprize/ARC-AGI-3-Agents
 - Official ARC-AGI-3 Kaggle starter: https://github.com/arcprize/ARC-AGI-3-Kaggle-Starter
 
 ## License

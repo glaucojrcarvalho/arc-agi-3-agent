@@ -1,0 +1,55 @@
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+.kaggle/
+kaggle.json
+*.pem
+*.key
+credentials.json
+secrets.*
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# ARC / Kaggle local data and downloaded assets
+environment_files/
+recordings/
+reference/
+vendor/
+data/
+outputs/
+artifacts/
+checkpoints/
+models/
+
+# Logs
+*.log
+logs/
+
+# Generated submissions
+notebooks/submission.ipynb
+submission.json
+submission.csv
+submission.parquet
+
+# Temporary notebook state
+.ipynb_checkpoints/
+
+# Build / packaging
+build/
+dist/
+*.egg-info/

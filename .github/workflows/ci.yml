@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - "sanitize/**"
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  public-safety-and-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Scan tracked files for public-repository violations
+        run: python scripts/public_preflight.py --all
+
+      - name: Compile Python sources
+        run: python -m compileall -q agent scripts src tests
+
+      - name: Run unit tests
+        env:
+          PYTHONPATH: src
+        run: python -m unittest discover -s tests -v

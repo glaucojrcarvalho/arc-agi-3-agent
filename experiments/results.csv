@@ -1,0 +1,2 @@
+id,status,revision,project_dirty,starter_revision,framework_revision,arc_agi_version,python_version,agent_sha256,model,configuration,score,actions,runtime,notes
+EXP-000,pending,,,,,,,,none,reproducible-random-baseline,,,,End-to-end pipeline validation baseline
