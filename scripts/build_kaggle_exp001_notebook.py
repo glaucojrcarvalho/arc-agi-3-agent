@@ -85,24 +85,41 @@ def build_notebook(agent_source: str) -> dict:
             competition_root = Path(
                 "/kaggle/input/competitions/{COMPETITION_SLUG}"
             )
-            expected_wheelhouse = Path(
-                "/kaggle/input/datasets/{VLLM_DATASET}"
-            )
+            wheelhouse_mounts = [
+                Path("/kaggle/input/{VLLM_DATASET_SLUG}"),
+                Path("/kaggle/input/datasets/{VLLM_DATASET}"),
+            ]
             expected_model_path = Path({MODEL_PATH!r})
 
-            if (
-                expected_wheelhouse.exists()
-                and (expected_wheelhouse / "requirements.lock").is_file()
-            ):
-                wheelhouse = expected_wheelhouse
+            direct_wheelhouses = [
+                candidate
+                for candidate in wheelhouse_mounts
+                if candidate.is_dir()
+                and (candidate / "requirements.lock").is_file()
+                and any(candidate.glob("*.whl"))
+            ]
+            if len(direct_wheelhouses) == 1:
+                wheelhouse = direct_wheelhouses[0]
+                print(
+                    "Resolved vLLM wheelhouse from attached Kaggle "
+                    f"dataset input: {{wheelhouse}}"
+                )
+            elif len(direct_wheelhouses) > 1:
+                raise RuntimeError(
+                    "Ambiguous direct vLLM wheelhouse mounts: "
+                    f"{{[str(path) for path in direct_wheelhouses]}}"
+                )
             else:
-                datasets_root = Path("/kaggle/input/datasets")
+                search_roots = [
+                    Path("/kaggle/input"),
+                    Path("/kaggle/input/datasets"),
+                ]
                 wheelhouse_candidates = sorted(
                     set(
                         requirements.parent
-                        for requirements in datasets_root.glob(
-                            "**/requirements.lock"
-                        )
+                        for root in search_roots
+                        if root.exists()
+                        for requirements in root.glob("**/requirements.lock")
                         if "{VLLM_DATASET_SLUG}" in requirements.parts
                         and any(requirements.parent.glob("*.whl"))
                     )
@@ -111,19 +128,19 @@ def build_notebook(agent_source: str) -> dict:
                 if len(wheelhouse_candidates) == 1:
                     wheelhouse = wheelhouse_candidates[0]
                     print(
-                        "Resolved vLLM wheelhouse from attached Kaggle "
-                        f"dataset input: {{wheelhouse}}"
+                        "Resolved vLLM wheelhouse by guarded discovery: "
+                        f"{{wheelhouse}}"
                     )
                 elif not wheelhouse_candidates:
-                    dataset_entries = sorted(
-                        str(path.relative_to(datasets_root))
-                        for path in datasets_root.glob("*/*")
+                    input_entries = sorted(
+                        str(path.relative_to(Path("/kaggle/input")))
+                        for path in Path("/kaggle/input").iterdir()
                         if path.is_dir()
                     )
                     raise RuntimeError(
                         "Could not resolve attached vLLM wheelhouse. "
-                        f"Expected {{expected_wheelhouse}}; "
-                        f"dataset entries={{dataset_entries}}"
+                        f"Tried {{[str(path) for path in wheelhouse_mounts]}}; "
+                        f"input entries={{input_entries}}"
                     )
                 else:
                     raise RuntimeError(
