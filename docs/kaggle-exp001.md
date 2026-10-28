@@ -14,7 +14,7 @@ The Kaggle model mirror states that it is an unmodified mirror of `Qwen/Qwen3.8-
 
 Kaggle model inputs are mounted under `/kaggle/input/models`. EXP-001 prefers `/kaggle/input/models/mikedan7/qwen3-8-27b-fp8-official/pytorch/hf-fp8/1` and falls back to guarded discovery within the models mount by locating a unique directory for the pinned model slug that contains a Hugging Face `config.json` and safetensor shards.
 
-Kaggle dataset mount layout can vary even when `dataset_sources` is preserved in server-side kernel metadata. EXP-001 therefore prefers the expected wheelhouse path and otherwise performs guarded discovery under `/kaggle/input/datasets`, accepting exactly one directory associated with `arc3-vllm-h100-wheelhouse-v3` that contains both `requirements.lock` and wheel files.
+Kaggle dataset mount layout can vary even when `dataset_sources` is preserved in server-side kernel metadata. EXP-001 therefore checks both the legacy `/kaggle/input/<slug>` layout and the newer `/kaggle/input/datasets/<owner>/<slug>` layout before guarded discovery across both roots, accepting exactly one directory associated with `arc3-vllm-h100-wheelhouse-v3` that contains both `requirements.lock` and wheel files.
 
 ## Build
 
