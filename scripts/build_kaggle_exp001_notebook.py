@@ -4,7 +4,7 @@
 Generated files are written under dist/ and are intentionally not committed.
 The notebook uses only offline Kaggle inputs during competition rerun:
 - ARC-AGI-3 competition assets;
-- the public ARC3 vLLM wheelhouse;
+- the public ARC3 e975732 vLLM runtime image layers;
 - a pinned Qwen3.8-27B-FP8 Kaggle model mirror.
 """
 
@@ -20,8 +20,8 @@ DEFAULT_AGENT = ROOT / "dist" / "my_agent.py"
 DEFAULT_OUTPUT_DIR = ROOT / "dist" / "kaggle-exp001"
 
 COMPETITION_SLUG = "arc-prize-2026-arc-agi-3"
-VLLM_DATASET = "driessmit1/arc3-vllm-h100-wheelhouse-v3"
-VLLM_DATASET_SLUG = "arc3-vllm-h100-wheelhouse-v3"
+VLLM_RUNTIME_DATASET = "lordhansolo/vllm-main-e975732-arc3"
+VLLM_RUNTIME_SLUG = "vllm-main-e975732-arc3"
 MODEL_SOURCE = "mikedan7/qwen3-8-27b-fp8-official/PyTorch/hf-fp8/1"
 MODEL_SLUG = "qwen3-8-27b-fp8-official"
 MODEL_PATH = (
