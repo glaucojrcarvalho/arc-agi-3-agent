@@ -74,6 +74,7 @@ def build_notebook(agent_source: str) -> dict:
         import shutil
         import subprocess
         import sys
+        import tarfile
         import time
         import urllib.request
         from pathlib import Path
@@ -85,69 +86,48 @@ def build_notebook(agent_source: str) -> dict:
             competition_root = Path(
                 "/kaggle/input/competitions/{COMPETITION_SLUG}"
             )
-            wheelhouse_mounts = [
-                Path("/kaggle/input/{VLLM_DATASET_SLUG}"),
-                Path("/kaggle/input/datasets/{VLLM_DATASET}"),
+            runtime_mounts = [
+                Path("/kaggle/input/{VLLM_RUNTIME_SLUG}"),
+                Path("/kaggle/input/datasets/{VLLM_RUNTIME_DATASET}"),
             ]
-            expected_model_path = Path({MODEL_PATH!r})
-
-            direct_wheelhouses = [
+            runtime_candidates = [
                 candidate
-                for candidate in wheelhouse_mounts
+                for candidate in runtime_mounts
                 if candidate.is_dir()
-                and (candidate / "requirements.lock").is_file()
-                and any(candidate.glob("*.whl"))
+                and (candidate / "runtime-manifest.json").is_file()
+                and any(candidate.glob("layer-*.tar.gz.blob"))
             ]
-            if len(direct_wheelhouses) == 1:
-                wheelhouse = direct_wheelhouses[0]
-                print(
-                    "Resolved vLLM wheelhouse from attached Kaggle "
-                    f"dataset input: {{wheelhouse}}"
-                )
-            elif len(direct_wheelhouses) > 1:
+            if len(runtime_candidates) == 1:
+                runtime_dir = runtime_candidates[0]
+            elif len(runtime_candidates) > 1:
                 raise RuntimeError(
-                    "Ambiguous direct vLLM wheelhouse mounts: "
-                    f"{{[str(path) for path in direct_wheelhouses]}}"
+                    "Ambiguous direct e975732 runtime mounts: "
+                    f"{{[str(path) for path in runtime_candidates]}}"
                 )
             else:
                 search_roots = [
                     Path("/kaggle/input"),
                     Path("/kaggle/input/datasets"),
                 ]
-                wheelhouse_candidates = sorted(
+                discovered = sorted(
                     set(
-                        requirements.parent
+                        manifest.parent
                         for root in search_roots
                         if root.exists()
-                        for requirements in root.glob("**/requirements.lock")
-                        if "{VLLM_DATASET_SLUG}" in requirements.parts
-                        and any(requirements.parent.glob("*.whl"))
+                        for manifest in root.glob("**/runtime-manifest.json")
+                        if "{VLLM_RUNTIME_SLUG}" in manifest.parts
+                        and any(manifest.parent.glob("layer-*.tar.gz.blob"))
                     )
                 )
-
-                if len(wheelhouse_candidates) == 1:
-                    wheelhouse = wheelhouse_candidates[0]
-                    print(
-                        "Resolved vLLM wheelhouse by guarded discovery: "
-                        f"{{wheelhouse}}"
-                    )
-                elif not wheelhouse_candidates:
-                    input_entries = sorted(
-                        str(path.relative_to(Path("/kaggle/input")))
-                        for path in Path("/kaggle/input").iterdir()
-                        if path.is_dir()
-                    )
+                if len(discovered) != 1:
                     raise RuntimeError(
-                        "Could not resolve attached vLLM wheelhouse. "
-                        f"Tried {{[str(path) for path in wheelhouse_mounts]}}; "
-                        f"input entries={{input_entries}}"
+                        "Could not uniquely resolve e975732 runtime: "
+                        f"{{[str(path) for path in discovered]}}"
                     )
-                else:
-                    raise RuntimeError(
-                        "Ambiguous vLLM wheelhouse mounts: "
-                        f"{{[str(path) for path in wheelhouse_candidates]}}"
-                    )
+                runtime_dir = discovered[0]
 
+            print(f"Resolved e975732 runtime dataset: {{runtime_dir}}")
+            expected_model_path = Path({MODEL_PATH!r})
             if expected_model_path.exists():
                 model_path = expected_model_path
             else:
@@ -160,7 +140,6 @@ def build_notebook(agent_source: str) -> dict:
                         and any(config.parent.glob("*.safetensors"))
                     )
                 )
-
                 if len(candidates) == 1:
                     model_path = candidates[0]
                     print(
@@ -168,15 +147,9 @@ def build_notebook(agent_source: str) -> dict:
                         f"{{model_path}}"
                     )
                 elif not candidates:
-                    model_entries = sorted(
-                        str(path.relative_to(models_root))
-                        for path in models_root.glob("*/*")
-                        if path.is_dir()
-                    )
                     raise RuntimeError(
                         "Could not resolve attached Qwen model. "
-                        f"Expected {{expected_model_path}}; "
-                        f"model entries={{model_entries}}"
+                        f"Expected {{expected_model_path}}"
                     )
                 else:
                     raise RuntimeError(
@@ -198,50 +171,191 @@ def build_notebook(agent_source: str) -> dict:
                 ],
                 check=True,
             )
-            requirements = wheelhouse / "requirements.lock"
-            if not requirements.exists():
+
+            py312_candidates = [
+                Path("/usr/bin/python3.12"),
+                Path("/usr/local/bin/python3.12"),
+            ]
+            path_python = shutil.which("python3.12")
+            if path_python:
+                py312_candidates.append(Path(path_python))
+            py312 = next(
+                (path for path in py312_candidates if path.is_file()),
+                None,
+            )
+            if py312 is None:
                 raise RuntimeError(
-                    "Missing vLLM requirements.lock: "
-                    + str(requirements)
+                    "CPython 3.12 is required for the e975732 runtime"
                 )
 
-            vllm_site_packages = Path(
-                "/kaggle/temp/vllm-site-packages"
-            )
-            shutil.rmtree(vllm_site_packages, ignore_errors=True)
-            vllm_site_packages.mkdir(parents=True, exist_ok=True)
-
-            subprocess.run(
+            python_probe = subprocess.run(
                 [
-                    sys.executable,
-                    "-m",
-                    "pip",
-                    "install",
-                    "--no-index",
-                    "--find-links",
-                    str(wheelhouse),
-                    "--requirement",
-                    str(requirements),
-                    "--target",
-                    str(vllm_site_packages),
-                    "--upgrade",
-                    "--ignore-installed",
-                    "--only-binary",
-                    ":all:",
-                    "--no-compile",
-                    "--disable-pip-version-check",
-                    "--no-warn-conflicts",
+                    str(py312),
+                    "-c",
+                    (
+                        "import sys; "
+                        "print('%d.%d' % sys.version_info[:2]); "
+                        "assert sys.version_info[:2] == (3, 12)"
+                    ),
                 ],
-                check=True,
+                capture_output=True,
+                text=True,
             )
+            print(python_probe.stdout)
+            if python_probe.returncode != 0:
+                raise RuntimeError(
+                    "Python 3.12 runtime probe failed: "
+                    + python_probe.stderr.strip()
+                )
+
+            manifest = json.loads(
+                (runtime_dir / "runtime-manifest.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+
+            def collect_layer_names(value):
+                names = []
+                if isinstance(value, dict):
+                    for nested in value.values():
+                        names.extend(collect_layer_names(nested))
+                elif isinstance(value, list):
+                    for nested in value:
+                        names.extend(collect_layer_names(nested))
+                elif isinstance(value, str):
+                    name = Path(value).name
+                    if (
+                        name.startswith("layer-")
+                        and name.endswith(".tar.gz.blob")
+                    ):
+                        names.append(name)
+                return names
+
+            manifest_layers = []
+            for name in collect_layer_names(manifest):
+                if name not in manifest_layers:
+                    manifest_layers.append(name)
+
+            def layer_number(path):
+                try:
+                    return int(path.name.split("-", 2)[1])
+                except (IndexError, ValueError):
+                    return 10**9
+
+            if manifest_layers:
+                layer_paths = [
+                    runtime_dir / name
+                    for name in manifest_layers
+                    if (runtime_dir / name).is_file()
+                ]
+            else:
+                layer_paths = sorted(
+                    runtime_dir.glob("layer-*.tar.gz.blob"),
+                    key=layer_number,
+                )
+
+            if not layer_paths:
+                raise RuntimeError("No e975732 runtime layers were found")
+            if len(layer_paths) != len(
+                list(runtime_dir.glob("layer-*.tar.gz.blob"))
+            ):
+                layer_paths = sorted(
+                    runtime_dir.glob("layer-*.tar.gz.blob"),
+                    key=layer_number,
+                )
+
+            print(
+                "e975732 runtime layers: "
+                + ", ".join(path.name for path in layer_paths)
+            )
+
+            rootfs = Path("/kaggle/temp/vllm-e975732-rootfs")
+            shutil.rmtree(rootfs, ignore_errors=True)
+            rootfs.mkdir(parents=True, exist_ok=True)
+
+            def remove_path(path):
+                if path.is_symlink() or path.is_file():
+                    path.unlink(missing_ok=True)
+                elif path.is_dir():
+                    shutil.rmtree(path)
+
+            for layer_path in layer_paths:
+                print(f"Extracting runtime layer: {{layer_path.name}}")
+                with tarfile.open(layer_path, mode="r:gz") as archive:
+                    members = archive.getmembers()
+                    for member in members:
+                        member_path = Path(member.name)
+                        if not member_path.parts:
+                            continue
+                        name = member_path.name
+                        if not name.startswith(".wh."):
+                            continue
+                        parent = rootfs.joinpath(*member_path.parts[:-1])
+                        if name == ".wh..wh..opq":
+                            if parent.is_dir():
+                                for child in list(parent.iterdir()):
+                                    remove_path(child)
+                        else:
+                            remove_path(parent / name[4:])
+
+                    regular_members = [
+                        member
+                        for member in members
+                        if not Path(member.name).name.startswith(".wh.")
+                    ]
+                    archive.extractall(
+                        rootfs,
+                        members=regular_members,
+                        filter="data",
+                    )
+
+            python_paths = []
+            for pattern in (
+                "**/python3.12/site-packages",
+                "**/python3.12/dist-packages",
+            ):
+                for path in rootfs.glob(pattern):
+                    if path.is_dir() and path not in python_paths:
+                        python_paths.append(path)
+
+            vllm_paths = [
+                path
+                for path in python_paths
+                if (path / "vllm" / "__init__.py").is_file()
+            ]
+            if len(vllm_paths) != 1:
+                raise RuntimeError(
+                    "Could not uniquely resolve vLLM site-packages: "
+                    f"{{[str(path) for path in vllm_paths]}}"
+                )
+            vllm_site_packages = vllm_paths[0]
+            print(f"e975732 vLLM site-packages: {{vllm_site_packages}}")
 
             server_env = os.environ.copy()
             existing_pythonpath = server_env.get("PYTHONPATH", "")
-            server_env["PYTHONPATH"] = str(vllm_site_packages)
-            if existing_pythonpath:
-                server_env["PYTHONPATH"] += (
-                    os.pathsep + existing_pythonpath
-                )
+            server_env["PYTHONPATH"] = os.pathsep.join(
+                [str(path) for path in python_paths]
+                + ([existing_pythonpath] if existing_pythonpath else [])
+            )
+
+            library_paths = [
+                rootfs / "usr/local/cuda/lib64",
+                rootfs / "usr/local/lib",
+                rootfs / "usr/local/nvidia/lib64",
+                rootfs / "usr/lib/x86_64-linux-gnu",
+                Path("/usr/local/nvidia/lib64"),
+            ]
+            existing_ld = server_env.get("LD_LIBRARY_PATH", "")
+            server_env["LD_LIBRARY_PATH"] = os.pathsep.join(
+                [str(path) for path in library_paths if path.is_dir()]
+                + ([existing_ld] if existing_ld else [])
+            )
+            server_env["LIBRARY_PATH"] = os.pathsep.join(
+                [
+                    "/usr/local/nvidia/lib64",
+                    server_env.get("LIBRARY_PATH", ""),
+                ]
+            ).strip(os.pathsep)
             server_env["USE_TF"] = "0"
             server_env["TRANSFORMERS_NO_TF"] = "1"
             server_env["TRANSFORMERS_NO_TORCHVISION"] = "1"
@@ -252,7 +366,7 @@ def build_notebook(agent_source: str) -> dict:
 
             cuda_probe = subprocess.run(
                 [
-                    sys.executable,
+                    str(py312),
                     "-c",
                     (
                         "import torch, vllm; "
@@ -275,7 +389,7 @@ def build_notebook(agent_source: str) -> dict:
             print(cuda_probe.stdout)
             if cuda_probe.returncode != 0:
                 raise RuntimeError(
-                    "Isolated vLLM CUDA preflight failed. stdout="
+                    "e975732 CUDA preflight failed. stdout="
                     + cuda_probe.stdout.strip()
                     + " stderr="
                     + cuda_probe.stderr.strip()
@@ -285,7 +399,7 @@ def build_notebook(agent_source: str) -> dict:
             log_handle = log_path.open("w")
             server = subprocess.Popen(
                 [
-                    sys.executable,
+                    str(py312),
                     "-m",
                     "vllm.entrypoints.openai.api_server",
                     "--model",
@@ -298,6 +412,8 @@ def build_notebook(agent_source: str) -> dict:
                     "8000",
                     "--gpu-memory-utilization",
                     "0.92",
+                    "--load-format",
+                    "safetensors",
                 ],
                 stdout=log_handle,
                 stderr=subprocess.STDOUT,
@@ -305,7 +421,7 @@ def build_notebook(agent_source: str) -> dict:
             )
 
             health_url = "http://127.0.0.1:8000/v1/models"
-            deadline = time.time() + 900
+            deadline = time.time() + 1200
             last_error = None
             while time.time() < deadline:
                 if server.poll() is not None:
@@ -314,7 +430,10 @@ def build_notebook(agent_source: str) -> dict:
                         f"see {{log_path}}"
                     )
                 try:
-                    with urllib.request.urlopen(health_url, timeout=5) as response:
+                    with urllib.request.urlopen(
+                        health_url,
+                        timeout=5,
+                    ) as response:
                         if response.status == 200:
                             break
                 except Exception as exc:
@@ -323,7 +442,8 @@ def build_notebook(agent_source: str) -> dict:
             else:
                 server.terminate()
                 raise RuntimeError(
-                    f"vLLM did not become healthy before timeout: {{last_error}}"
+                    "vLLM did not become healthy before timeout: "
+                    f"{{last_error}}"
                 )
 
             os.environ["ARC_MODEL_NAME"] = {SERVED_MODEL_NAME!r}
