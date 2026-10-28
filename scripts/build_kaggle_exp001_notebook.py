@@ -623,7 +623,7 @@ def build_metadata(*, username: str, kernel_slug: str) -> dict:
         "enable_internet": False,
         "machine_shape": "NvidiaRtxPro6000",
         "keywords": [],
-        "dataset_sources": [VLLM_DATASET],
+        "dataset_sources": [VLLM_RUNTIME_DATASET],
         "kernel_sources": [],
         "competition_sources": [COMPETITION_SLUG],
         "model_sources": [MODEL_SOURCE],
