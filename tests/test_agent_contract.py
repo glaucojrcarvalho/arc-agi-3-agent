@@ -220,6 +220,67 @@ class AgentContractTests(unittest.TestCase):
             agent.choose_action([], frame)
         self.assertEqual(model.prompts, [])
 
+    def test_repeated_noop_simple_action_is_suppressed_for_same_state(self) -> None:
+        agent, model = self.make_agent(
+            '{"action":1,"data":{},"reason":"try one"}'
+        )
+        unchanged = FakeFrameData(
+            frame=[[[4]]],
+            available_actions=[1, 2],
+        )
+
+        first = agent.choose_action([], unchanged)
+        self.assertIs(first, FakeGameAction.ACTION1)
+
+        second = agent.choose_action([], unchanged)
+        self.assertIs(second, FakeGameAction.ACTION1)
+
+        third = agent.choose_action([], unchanged)
+        self.assertIs(third, FakeGameAction.ACTION2)
+
+        prompt = json.loads(model.prompts[-1])
+        self.assertEqual(prompt["available_action_ids"], [2])
+        self.assertEqual(third.reasoning["suppressed_noop_actions"], [1])
+        self.assertEqual(len(agent.transition_memory), 2)
+
+    def test_effectful_action_is_not_suppressed(self) -> None:
+        agent, model = self.make_agent(
+            '{"action":1,"data":{},"reason":"try one"}'
+        )
+        before = FakeFrameData(
+            frame=[[[0]]],
+            available_actions=[1, 2],
+        )
+        after = FakeFrameData(
+            frame=[[[1]]],
+            available_actions=[1, 2],
+        )
+
+        self.assertIs(agent.choose_action([], before), FakeGameAction.ACTION1)
+        self.assertIs(agent.choose_action([], after), FakeGameAction.ACTION1)
+        self.assertIs(agent.choose_action([], before), FakeGameAction.ACTION1)
+
+        prompt = json.loads(model.prompts[-1])
+        self.assertEqual(prompt["available_action_ids"], [1, 2])
+
+    def test_complex_action_is_never_suppressed_by_action_id_only(self) -> None:
+        agent, model = self.make_agent(
+            '{"action":6,"data":{"x":0,"y":0},"reason":"inspect"}'
+        )
+        frame = FakeFrameData(
+            frame=[[[0, 0], [0, 0]]],
+            available_actions=[6],
+        )
+
+        agent.choose_action([], frame)
+        agent.choose_action([], frame)
+        third = agent.choose_action([], frame)
+
+        self.assertIs(third, FakeGameAction.ACTION6)
+        self.assertEqual(third.reasoning["suppressed_noop_actions"], [])
+        prompt = json.loads(model.prompts[-1])
+        self.assertEqual(prompt["available_action_ids"], [6])
+
     def test_transport_failure_is_not_silently_converted_to_fallback(self) -> None:
         agent = self.module.MyAgent(game_id="test-game")
         agent._model = FailingModel("")
