@@ -76,7 +76,7 @@ class KaggleExp001BuilderTests(unittest.TestCase):
                 continue
             compile(source, f"<generated-cell-{index}>", "exec")
 
-    def test_vllm_install_is_isolated_from_kaggle_system_python(self) -> None:
+    def test_vllm_runtime_is_isolated_from_kaggle_system_python(self) -> None:
         notebook = module.build_notebook("VALUE = 1\\n")
         source = "\\n".join(
             cell.get("source", "")
@@ -84,12 +84,12 @@ class KaggleExp001BuilderTests(unittest.TestCase):
             if cell.get("cell_type") == "code"
         )
 
-        self.assertIn("--requirement", source)
-        self.assertIn("requirements.lock", source)
-        self.assertIn("--target", source)
-        self.assertIn("vllm-site-packages", source)
-        self.assertIn("--ignore-installed", source)
-        self.assertIn('env=server_env', source)
+        self.assertIn("/kaggle/temp/vllm-e975732-rootfs", source)
+        self.assertIn("python3.12", source)
+        self.assertIn("PYTHONPATH", source)
+        self.assertIn("LD_LIBRARY_PATH", source)
+        self.assertIn("vllm_site_packages", source)
+        self.assertIn("env=server_env", source)
 
     def test_save_and_run_performs_model_inference_validation(self) -> None:
         notebook = module.build_notebook("VALUE = 1\\n")
