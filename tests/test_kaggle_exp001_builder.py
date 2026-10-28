@@ -23,7 +23,7 @@ class KaggleExp001BuilderTests(unittest.TestCase):
 
         self.assertEqual(metadata["machine_shape"], "NvidiaRtxPro6000")
         self.assertFalse(metadata["enable_internet"])
-        self.assertEqual(metadata["dataset_sources"], [module.VLLM_RUNTIME_DATASET])
+        self.assertEqual(metadata["dataset_sources"], [module.VLLM_DATASET])
         self.assertEqual(metadata["model_sources"], [module.MODEL_SOURCE])
         self.assertEqual(
             metadata["competition_sources"],
@@ -35,29 +35,39 @@ class KaggleExp001BuilderTests(unittest.TestCase):
         source = "\n".join(cell.get("source", "") for cell in notebook["cells"])
 
         self.assertIn("127.0.0.1", source)
+        self.assertIn(str(module.VLLM_PORT), source)
         self.assertIn(module.SERVED_MODEL_NAME, source)
         self.assertIn(module.MODEL_PATH, source)
         self.assertIn(module.MODEL_SLUG, source)
-        self.assertIn("config.json", source)
-        self.assertIn("*.safetensors", source)
-        self.assertIn("/kaggle/input/models", source)
-        self.assertIn("import sys", source)
-        self.assertIn("sys.executable", source)
-        self.assertNotIn("nvidia-smi", source)
-        self.assertIn("/kaggle/input/datasets", source)
-        self.assertIn("/kaggle/input/", source)
-        self.assertIn(module.VLLM_RUNTIME_SLUG, source)
-        self.assertIn("runtime-manifest.json", source)
-        self.assertIn("layer-*.tar.gz.blob", source)
-        self.assertIn("/kaggle/temp/vllm-e975732-rootfs", source)
-        self.assertIn("python3.12", source)
-        self.assertIn("tarfile.open", source)
+        self.assertIn(module.VLLM_DATASET_SLUG, source)
+        self.assertIn("requirements.lock", source)
+        self.assertIn("/kaggle/working/vllm-site-packages", source)
+        self.assertIn("--target", source)
+        self.assertIn("--ignore-installed", source)
+        self.assertIn("--enable-prefix-caching", source)
+        self.assertIn("--tool-call-parser", source)
+        self.assertIn("qwen3_coder", source)
+        self.assertIn("--reasoning-parser", source)
+        self.assertIn("qwen3", source)
+        self.assertIn("--max-model-len", source)
+        self.assertIn("65536", source)
         self.assertIn("server_env", source)
-        self.assertIn("torch.cuda.is_available()", source)
-        self.assertIn("torch.cuda.get_device_name(0)", source)
-        self.assertIn("rtx pro 6000", source.lower())
-        self.assertIn("VLLM_LOGGING_LEVEL", source)
         self.assertNotIn("https://api.openai.com", source)
+
+    def test_host_gpu_preflight_matches_taaf_bootstrap(self) -> None:
+        notebook = module.build_notebook("VALUE = 1\n")
+        source = "\n".join(
+            cell.get("source", "")
+            for cell in notebook["cells"]
+            if cell.get("cell_type") == "code"
+        )
+
+        self.assertIn("nvidia-smi", source)
+        self.assertIn("--query-gpu=name", source)
+        self.assertIn("rtx pro 6000", source.lower())
+        self.assertIn("CUDA GPU check passed", source)
+        self.assertNotIn("torch.cuda.is_available()", source)
+        self.assertNotIn("torch.cuda.device_count()", source)
 
     def test_expected_model_mount_uses_kaggle_input_slug(self) -> None:
         self.assertEqual(
@@ -76,7 +86,7 @@ class KaggleExp001BuilderTests(unittest.TestCase):
                 continue
             compile(source, f"<generated-cell-{index}>", "exec")
 
-    def test_vllm_runtime_is_isolated_from_kaggle_system_python(self) -> None:
+    def test_vllm_install_is_isolated_and_cleaned_after_validation(self) -> None:
         notebook = module.build_notebook("VALUE = 1\\n")
         source = "\\n".join(
             cell.get("source", "")
@@ -84,27 +94,12 @@ class KaggleExp001BuilderTests(unittest.TestCase):
             if cell.get("cell_type") == "code"
         )
 
-        self.assertIn("/kaggle/temp/vllm-e975732-rootfs", source)
-        self.assertIn("python3.12", source)
+        self.assertIn("/kaggle/working/vllm-site-packages", source)
         self.assertIn("PYTHONPATH", source)
-        self.assertIn("LD_LIBRARY_PATH", source)
-        self.assertIn("vllm_site_packages", source)
         self.assertIn("env=server_env", source)
-
-    def test_docker_layer_links_are_normalized_before_data_filter(self) -> None:
-        notebook = module.build_notebook("VALUE = 1\\n")
-        source = "\\n".join(
-            cell.get("source", "")
-            for cell in notebook["cells"]
-            if cell.get("cell_type") == "code"
-        )
-
-        self.assertIn("def docker_layer_filter", source)
-        self.assertIn("member.issym()", source)
-        self.assertIn("member.islnk()", source)
-        self.assertIn("posixpath.relpath", source)
-        self.assertIn("tarfile.data_filter", source)
-        self.assertNotIn("fully_trusted", source)
+        self.assertIn("shutil.rmtree(site_packages", source)
+        self.assertNotIn("/kaggle/temp/vllm-e975732-rootfs", source)
+        self.assertNotIn("runtime-manifest.json", source)
 
     def test_save_and_run_performs_model_inference_validation(self) -> None:
         notebook = module.build_notebook("VALUE = 1\\n")
