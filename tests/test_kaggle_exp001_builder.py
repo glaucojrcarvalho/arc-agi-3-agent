@@ -91,6 +91,21 @@ class KaggleExp001BuilderTests(unittest.TestCase):
         self.assertIn("vllm_site_packages", source)
         self.assertIn("env=server_env", source)
 
+    def test_docker_layer_links_are_normalized_before_data_filter(self) -> None:
+        notebook = module.build_notebook("VALUE = 1\\n")
+        source = "\\n".join(
+            cell.get("source", "")
+            for cell in notebook["cells"]
+            if cell.get("cell_type") == "code"
+        )
+
+        self.assertIn("def docker_layer_filter", source)
+        self.assertIn("member.issym()", source)
+        self.assertIn("member.islnk()", source)
+        self.assertIn("posixpath.relpath", source)
+        self.assertIn("tarfile.data_filter", source)
+        self.assertNotIn("fully_trusted", source)
+
     def test_save_and_run_performs_model_inference_validation(self) -> None:
         notebook = module.build_notebook("VALUE = 1\\n")
         source = "\\n".join(
