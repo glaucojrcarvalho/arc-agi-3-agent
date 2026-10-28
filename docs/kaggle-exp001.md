@@ -7,14 +7,14 @@ EXP-001 is intentionally not expected to run the 27B FP8 model on a developer la
 The generated notebook pins these public Kaggle inputs:
 
 - competition: `arc-prize-2026-arc-agi-3`;
-- offline vLLM wheelhouse: `driessmit1/arc3-vllm-h100-wheelhouse-v3`;
+- offline vLLM runtime image: `lordhansolo/vllm-main-e975732-arc3`;
 - model: `mikedan7/qwen3-8-27b-fp8-official/PyTorch/hf-fp8/1`.
 
 The Kaggle model mirror states that it is an unmodified mirror of `Qwen/Qwen3.8-27B-FP8` pinned to upstream revision `017b9c7af6b5689d5dd426a76e0bc077eb5ca20a`.
 
 Kaggle model inputs are mounted under `/kaggle/input/models`. EXP-001 prefers `/kaggle/input/models/mikedan7/qwen3-8-27b-fp8-official/pytorch/hf-fp8/1` and falls back to guarded discovery within the models mount by locating a unique directory for the pinned model slug that contains a Hugging Face `config.json` and safetensor shards.
 
-Kaggle dataset mount layout can vary even when `dataset_sources` is preserved in server-side kernel metadata. EXP-001 therefore checks both the legacy `/kaggle/input/<slug>` layout and the newer `/kaggle/input/datasets/<owner>/<slug>` layout before guarded discovery across both roots, accepting exactly one directory associated with `arc3-vllm-h100-wheelhouse-v3` that contains both `requirements.lock` and wheel files.
+Kaggle dataset mount layout can vary even when `dataset_sources` is preserved in server-side kernel metadata. EXP-001 checks both the legacy `/kaggle/input/<slug>` layout and the newer `/kaggle/input/datasets/<owner>/<slug>` layout. It resolves exactly one `vllm-main-e975732-arc3` mount containing `runtime-manifest.json` and the pinned `layer-*.tar.gz.blob` image layers.
 
 ## Build
 
@@ -61,13 +61,13 @@ During ordinary save-and-run, the notebook boots the pinned Qwen/vLLM runtime an
 During the competition rerun, it reuses the same model boot path and then:
 
 1. installs ARC runtime packages from the competition wheel directory;
-2. installs the wheelhouse's pinned `requirements.lock` into an isolated `/kaggle/temp/vllm-site-packages` target rather than mutating Kaggle's system Python or persisting thousands of dependency files as notebook output;
-3. verifies through the isolated PyTorch stack that CUDA is available, exactly one GPU is visible, and the device name identifies an RTX Pro 6000;
-4. launches Qwen3.8-27B FP8 on `127.0.0.1:8000`;
-5. waits for the OpenAI-compatible server to become healthy;
-6. configures the agent to call only that loopback endpoint;
-7. registers the standalone EXP-001 agent with the ARC framework;
-8. runs the ARC agent framework against the competition gateway.
+2. resolves the pinned `vllm-main-e975732-arc3` dataset and reconstructs its image layers into isolated `/kaggle/temp/vllm-e975732-rootfs`;
+3. selects and verifies CPython 3.12, discovers the reconstructed vLLM site-packages, and keeps the Kaggle system Python untouched;
+4. verifies through the reconstructed PyTorch/vLLM stack that CUDA is available, exactly one GPU is visible, and the device name identifies an RTX Pro 6000;
+5. launches the pinned Qwen3.8-27B FP8 model on `127.0.0.1:8000` using the reconstructed base runtime, without applying the runtime's Qwen4-specific overlay;
+6. waits for the OpenAI-compatible server to become healthy;
+7. configures the agent to call only that loopback endpoint;
+8. registers the standalone EXP-001 agent with the ARC framework and runs it against the competition gateway.
 
 The notebook records the vLLM server log in `/kaggle/working/vllm-openai-server.log` for deployment debugging.
 
