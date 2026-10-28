@@ -71,6 +71,7 @@ def build_notebook(agent_source: str) -> dict:
         f"""\
         import json
         import os
+        import posixpath
         import shutil
         import subprocess
         import sys
@@ -279,6 +280,22 @@ def build_notebook(agent_source: str) -> dict:
                 elif path.is_dir():
                     shutil.rmtree(path)
 
+            def docker_layer_filter(member, destination):
+                if member.issym() and member.linkname.startswith("/"):
+                    parent = posixpath.dirname(member.name) or "."
+                    target = member.linkname.lstrip("/")
+                    relative = posixpath.relpath(target, start=parent)
+                    member = member.replace(
+                        linkname=relative,
+                        deep=False,
+                    )
+                elif member.islnk() and member.linkname.startswith("/"):
+                    member = member.replace(
+                        linkname=member.linkname.lstrip("/"),
+                        deep=False,
+                    )
+                return tarfile.data_filter(member, destination)
+
             for layer_path in layer_paths:
                 print(f"Extracting runtime layer: {{layer_path.name}}")
                 with tarfile.open(layer_path, mode="r:gz") as archive:
@@ -306,7 +323,7 @@ def build_notebook(agent_source: str) -> dict:
                     archive.extractall(
                         rootfs,
                         members=regular_members,
-                        filter="data",
+                        filter=docker_layer_filter,
                     )
 
             python_paths = []
