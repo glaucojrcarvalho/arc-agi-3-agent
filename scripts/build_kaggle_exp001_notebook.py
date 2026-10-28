@@ -4,7 +4,7 @@
 Generated files are written under dist/ and are intentionally not committed.
 The notebook uses only offline Kaggle inputs during competition rerun:
 - ARC-AGI-3 competition assets;
-- the public ARC3 e975732 vLLM runtime image layers;
+- the public ARC3 vLLM wheelhouse used by the TAAF Kaggle bootstrap;
 - a pinned Qwen3.8-27B-FP8 Kaggle model mirror.
 """
 
@@ -20,8 +20,8 @@ DEFAULT_AGENT = ROOT / "dist" / "my_agent.py"
 DEFAULT_OUTPUT_DIR = ROOT / "dist" / "kaggle-exp001"
 
 COMPETITION_SLUG = "arc-prize-2026-arc-agi-3"
-VLLM_RUNTIME_DATASET = "lordhansolo/vllm-main-e975732-arc3"
-VLLM_RUNTIME_SLUG = "vllm-main-e975732-arc3"
+VLLM_DATASET = "driessmit1/arc3-vllm-h100-wheelhouse-v3"
+VLLM_DATASET_SLUG = "arc3-vllm-h100-wheelhouse-v3"
 MODEL_SOURCE = "mikedan7/qwen3-8-27b-fp8-official/PyTorch/hf-fp8/1"
 MODEL_SLUG = "qwen3-8-27b-fp8-official"
 MODEL_PATH = (
@@ -29,7 +29,8 @@ MODEL_PATH = (
     "pytorch/hf-fp8/1"
 )
 SERVED_MODEL_NAME = "Qwen/Qwen3.8-27B"
-VLLM_ENDPOINT = "http://127.0.0.1:8000/v1/chat/completions"
+VLLM_PORT = 1234
+VLLM_ENDPOINT = "http://127.0.0.1:1234/v1/chat/completions"
 
 
 def code_cell(source: str) -> dict:
@@ -71,11 +72,9 @@ def build_notebook(agent_source: str) -> dict:
         f"""\
         import json
         import os
-        import posixpath
         import shutil
         import subprocess
         import sys
-        import tarfile
         import time
         import urllib.request
         from pathlib import Path
@@ -87,23 +86,23 @@ def build_notebook(agent_source: str) -> dict:
             competition_root = Path(
                 "/kaggle/input/competitions/{COMPETITION_SLUG}"
             )
-            runtime_mounts = [
-                Path("/kaggle/input/{VLLM_RUNTIME_SLUG}"),
-                Path("/kaggle/input/datasets/{VLLM_RUNTIME_DATASET}"),
+            wheelhouse_mounts = [
+                Path("/kaggle/input/{VLLM_DATASET_SLUG}"),
+                Path("/kaggle/input/datasets/{VLLM_DATASET}"),
             ]
-            runtime_candidates = [
+            direct_wheelhouses = [
                 candidate
-                for candidate in runtime_mounts
+                for candidate in wheelhouse_mounts
                 if candidate.is_dir()
-                and (candidate / "runtime-manifest.json").is_file()
-                and any(candidate.glob("layer-*.tar.gz.blob"))
+                and (candidate / "requirements.lock").is_file()
+                and any(candidate.glob("*.whl"))
             ]
-            if len(runtime_candidates) == 1:
-                runtime_dir = runtime_candidates[0]
-            elif len(runtime_candidates) > 1:
+            if len(direct_wheelhouses) == 1:
+                wheelhouse = direct_wheelhouses[0]
+            elif len(direct_wheelhouses) > 1:
                 raise RuntimeError(
-                    "Ambiguous direct e975732 runtime mounts: "
-                    f"{{[str(path) for path in runtime_candidates]}}"
+                    "Ambiguous direct vLLM wheelhouse mounts: "
+                    f"{{[str(path) for path in direct_wheelhouses]}}"
                 )
             else:
                 search_roots = [
@@ -112,22 +111,23 @@ def build_notebook(agent_source: str) -> dict:
                 ]
                 discovered = sorted(
                     set(
-                        manifest.parent
+                        requirements.parent
                         for root in search_roots
                         if root.exists()
-                        for manifest in root.glob("**/runtime-manifest.json")
-                        if "{VLLM_RUNTIME_SLUG}" in manifest.parts
-                        and any(manifest.parent.glob("layer-*.tar.gz.blob"))
+                        for requirements in root.glob("**/requirements.lock")
+                        if "{VLLM_DATASET_SLUG}" in requirements.parts
+                        and any(requirements.parent.glob("*.whl"))
                     )
                 )
                 if len(discovered) != 1:
                     raise RuntimeError(
-                        "Could not uniquely resolve e975732 runtime: "
+                        "Could not uniquely resolve vLLM wheelhouse: "
                         f"{{[str(path) for path in discovered]}}"
                     )
-                runtime_dir = discovered[0]
+                wheelhouse = discovered[0]
 
-            print(f"Resolved e975732 runtime dataset: {{runtime_dir}}")
+            print(f"Resolved vLLM wheelhouse: {{wheelhouse}}")
+
             expected_model_path = Path({MODEL_PATH!r})
             if expected_model_path.exists():
                 model_path = expected_model_path
@@ -173,250 +173,108 @@ def build_notebook(agent_source: str) -> dict:
                 check=True,
             )
 
-            py312_candidates = [
-                Path("/usr/bin/python3.12"),
-                Path("/usr/local/bin/python3.12"),
-            ]
-            path_python = shutil.which("python3.12")
-            if path_python:
-                py312_candidates.append(Path(path_python))
-            py312 = next(
-                (path for path in py312_candidates if path.is_file()),
-                None,
-            )
-            if py312 is None:
+            nvidia_smi = shutil.which("nvidia-smi")
+            if not nvidia_smi:
+                for candidate in (
+                    "/usr/bin/nvidia-smi",
+                    "/usr/local/nvidia/bin/nvidia-smi",
+                ):
+                    if Path(candidate).is_file():
+                        nvidia_smi = candidate
+                        break
+            if not nvidia_smi:
                 raise RuntimeError(
-                    "CPython 3.12 is required for the e975732 runtime"
+                    "CUDA host preflight failed: nvidia-smi is unavailable"
                 )
 
-            python_probe = subprocess.run(
+            gpu_probe = subprocess.run(
                 [
-                    str(py312),
-                    "-c",
-                    (
-                        "import sys; "
-                        "print('%d.%d' % sys.version_info[:2]); "
-                        "assert sys.version_info[:2] == (3, 12)"
-                    ),
+                    nvidia_smi,
+                    "--query-gpu=name",
+                    "--format=csv,noheader",
                 ],
                 capture_output=True,
                 text=True,
             )
-            print(python_probe.stdout)
-            if python_probe.returncode != 0:
+            print(gpu_probe.stdout)
+            if gpu_probe.returncode != 0:
                 raise RuntimeError(
-                    "Python 3.12 runtime probe failed: "
-                    + python_probe.stderr.strip()
+                    "CUDA host preflight failed: "
+                    + gpu_probe.stderr.strip()
                 )
-
-            manifest = json.loads(
-                (runtime_dir / "runtime-manifest.json").read_text(
-                    encoding="utf-8"
-                )
-            )
-
-            def collect_layer_names(value):
-                names = []
-                if isinstance(value, dict):
-                    for nested in value.values():
-                        names.extend(collect_layer_names(nested))
-                elif isinstance(value, list):
-                    for nested in value:
-                        names.extend(collect_layer_names(nested))
-                elif isinstance(value, str):
-                    name = Path(value).name
-                    if (
-                        name.startswith("layer-")
-                        and name.endswith(".tar.gz.blob")
-                    ):
-                        names.append(name)
-                return names
-
-            manifest_layers = []
-            for name in collect_layer_names(manifest):
-                if name not in manifest_layers:
-                    manifest_layers.append(name)
-
-            def layer_number(path):
-                try:
-                    return int(path.name.split("-", 2)[1])
-                except (IndexError, ValueError):
-                    return 10**9
-
-            if manifest_layers:
-                layer_paths = [
-                    runtime_dir / name
-                    for name in manifest_layers
-                    if (runtime_dir / name).is_file()
-                ]
-            else:
-                layer_paths = sorted(
-                    runtime_dir.glob("layer-*.tar.gz.blob"),
-                    key=layer_number,
-                )
-
-            if not layer_paths:
-                raise RuntimeError("No e975732 runtime layers were found")
-            if len(layer_paths) != len(
-                list(runtime_dir.glob("layer-*.tar.gz.blob"))
-            ):
-                layer_paths = sorted(
-                    runtime_dir.glob("layer-*.tar.gz.blob"),
-                    key=layer_number,
-                )
-
-            print(
-                "e975732 runtime layers: "
-                + ", ".join(path.name for path in layer_paths)
-            )
-
-            rootfs = Path("/kaggle/temp/vllm-e975732-rootfs")
-            shutil.rmtree(rootfs, ignore_errors=True)
-            rootfs.mkdir(parents=True, exist_ok=True)
-
-            def remove_path(path):
-                if path.is_symlink() or path.is_file():
-                    path.unlink(missing_ok=True)
-                elif path.is_dir():
-                    shutil.rmtree(path)
-
-            def docker_layer_filter(member, destination):
-                if member.issym() and member.linkname.startswith("/"):
-                    parent = posixpath.dirname(member.name) or "."
-                    target = member.linkname.lstrip("/")
-                    relative = posixpath.relpath(target, start=parent)
-                    member = member.replace(
-                        linkname=relative,
-                        deep=False,
-                    )
-                elif member.islnk() and member.linkname.startswith("/"):
-                    member = member.replace(
-                        linkname=member.linkname.lstrip("/"),
-                        deep=False,
-                    )
-                return tarfile.data_filter(member, destination)
-
-            for layer_path in layer_paths:
-                print(f"Extracting runtime layer: {{layer_path.name}}")
-                with tarfile.open(layer_path, mode="r:gz") as archive:
-                    members = archive.getmembers()
-                    for member in members:
-                        member_path = Path(member.name)
-                        if not member_path.parts:
-                            continue
-                        name = member_path.name
-                        if not name.startswith(".wh."):
-                            continue
-                        parent = rootfs.joinpath(*member_path.parts[:-1])
-                        if name == ".wh..wh..opq":
-                            if parent.is_dir():
-                                for child in list(parent.iterdir()):
-                                    remove_path(child)
-                        else:
-                            remove_path(parent / name[4:])
-
-                    regular_members = [
-                        member
-                        for member in members
-                        if not Path(member.name).name.startswith(".wh.")
-                    ]
-                    archive.extractall(
-                        rootfs,
-                        members=regular_members,
-                        filter=docker_layer_filter,
-                    )
-
-            python_paths = []
-            for pattern in (
-                "**/python3.12/site-packages",
-                "**/python3.12/dist-packages",
-            ):
-                for path in rootfs.glob(pattern):
-                    if path.is_dir() and path not in python_paths:
-                        python_paths.append(path)
-
-            vllm_paths = [
-                path
-                for path in python_paths
-                if (path / "vllm" / "__init__.py").is_file()
+            gpu_names = [
+                line.strip()
+                for line in gpu_probe.stdout.splitlines()
+                if line.strip()
             ]
-            if len(vllm_paths) != 1:
+            if len(gpu_names) != 1:
                 raise RuntimeError(
-                    "Could not uniquely resolve vLLM site-packages: "
-                    f"{{[str(path) for path in vllm_paths]}}"
+                    f"Expected one CUDA GPU, found {{gpu_names}}"
                 )
-            vllm_site_packages = vllm_paths[0]
-            print(f"e975732 vLLM site-packages: {{vllm_site_packages}}")
+            if "rtx pro 6000" not in gpu_names[0].lower():
+                raise RuntimeError(
+                    "Expected RTX Pro 6000, found "
+                    + gpu_names[0]
+                )
+            print(
+                "CUDA GPU check passed for rtx-pro-6000 x1: "
+                f"{{gpu_names}}"
+            )
+
+            requirements = wheelhouse / "requirements.lock"
+            if not requirements.is_file():
+                raise RuntimeError(
+                    "Missing vLLM requirements.lock: "
+                    + str(requirements)
+                )
+
+            site_packages = Path(
+                "/kaggle/working/vllm-site-packages"
+            )
+            shutil.rmtree(site_packages, ignore_errors=True)
+            site_packages.mkdir(parents=True, exist_ok=True)
+
+            subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pip",
+                    "install",
+                    "--no-index",
+                    "--find-links",
+                    str(wheelhouse),
+                    "--requirement",
+                    str(requirements),
+                    "--target",
+                    str(site_packages),
+                    "--upgrade",
+                    "--ignore-installed",
+                    "--only-binary",
+                    ":all:",
+                    "--no-compile",
+                    "--disable-pip-version-check",
+                    "--no-warn-conflicts",
+                ],
+                check=True,
+            )
 
             server_env = os.environ.copy()
             existing_pythonpath = server_env.get("PYTHONPATH", "")
-            server_env["PYTHONPATH"] = os.pathsep.join(
-                [str(path) for path in python_paths]
-                + ([existing_pythonpath] if existing_pythonpath else [])
-            )
-
-            library_paths = [
-                rootfs / "usr/local/cuda/lib64",
-                rootfs / "usr/local/lib",
-                rootfs / "usr/local/nvidia/lib64",
-                rootfs / "usr/lib/x86_64-linux-gnu",
-                Path("/usr/local/nvidia/lib64"),
-            ]
-            existing_ld = server_env.get("LD_LIBRARY_PATH", "")
-            server_env["LD_LIBRARY_PATH"] = os.pathsep.join(
-                [str(path) for path in library_paths if path.is_dir()]
-                + ([existing_ld] if existing_ld else [])
-            )
-            server_env["LIBRARY_PATH"] = os.pathsep.join(
-                [
-                    "/usr/local/nvidia/lib64",
-                    server_env.get("LIBRARY_PATH", ""),
-                ]
-            ).strip(os.pathsep)
+            server_env["PYTHONPATH"] = str(site_packages)
+            if existing_pythonpath:
+                server_env["PYTHONPATH"] += (
+                    os.pathsep + existing_pythonpath
+                )
             server_env["USE_TF"] = "0"
             server_env["TRANSFORMERS_NO_TF"] = "1"
             server_env["TRANSFORMERS_NO_TORCHVISION"] = "1"
             server_env["VLLM_NO_USAGE_STATS"] = "1"
-            server_env["HF_HUB_OFFLINE"] = "1"
-            server_env["TRANSFORMERS_OFFLINE"] = "1"
-            server_env["VLLM_LOGGING_LEVEL"] = "DEBUG"
-
-            cuda_probe = subprocess.run(
-                [
-                    str(py312),
-                    "-c",
-                    (
-                        "import torch, vllm; "
-                        "print('vLLM', vllm.__version__); "
-                        "print('torch', torch.__version__); "
-                        "print('torch cuda', torch.version.cuda); "
-                        "print('cuda available', torch.cuda.is_available()); "
-                        "print('cuda count', torch.cuda.device_count()); "
-                        "assert torch.cuda.is_available(); "
-                        "assert torch.cuda.device_count() == 1; "
-                        "device = torch.cuda.get_device_name(0); "
-                        "print('cuda device', device); "
-                        "assert 'rtx pro 6000' in device.lower(), device"
-                    ),
-                ],
-                env=server_env,
-                capture_output=True,
-                text=True,
-            )
-            print(cuda_probe.stdout)
-            if cuda_probe.returncode != 0:
-                raise RuntimeError(
-                    "e975732 CUDA preflight failed. stdout="
-                    + cuda_probe.stdout.strip()
-                    + " stderr="
-                    + cuda_probe.stderr.strip()
-                )
 
             log_path = Path("/kaggle/working/vllm-openai-server.log")
-            log_handle = log_path.open("w")
+            log_handle = log_path.open("w", encoding="utf-8")
             server = subprocess.Popen(
                 [
-                    str(py312),
+                    sys.executable,
                     "-m",
                     "vllm.entrypoints.openai.api_server",
                     "--model",
@@ -426,25 +284,45 @@ def build_notebook(agent_source: str) -> dict:
                     "--host",
                     "127.0.0.1",
                     "--port",
-                    "8000",
-                    "--gpu-memory-utilization",
-                    "0.92",
-                    "--load-format",
-                    "safetensors",
+                    str({VLLM_PORT}),
+                    "--tensor-parallel-size",
+                    "1",
+                    "--enable-auto-tool-choice",
+                    "--tool-call-parser",
+                    "qwen3_coder",
+                    "--generation-config",
+                    "vllm",
+                    "--enable-prefix-caching",
+                    "--default-chat-template-kwargs",
+                    '{{"preserve_thinking": true}}',
+                    "--reasoning-parser",
+                    "qwen3",
+                    "--max-model-len",
+                    "65536",
                 ],
                 stdout=log_handle,
                 stderr=subprocess.STDOUT,
                 env=server_env,
+                text=True,
             )
 
-            health_url = "http://127.0.0.1:8000/v1/models"
+            health_url = "http://127.0.0.1:{VLLM_PORT}/v1/models"
             deadline = time.time() + 1200
             last_error = None
             while time.time() < deadline:
                 if server.poll() is not None:
+                    log_handle.flush()
+                    tail = ""
+                    if log_path.is_file():
+                        tail = "\\n".join(
+                            log_path.read_text(
+                                encoding="utf-8",
+                                errors="replace",
+                            ).splitlines()[-120:]
+                        )
                     raise RuntimeError(
                         f"vLLM exited early with code {{server.returncode}}; "
-                        f"see {{log_path}}"
+                        f"tail={{tail}}"
                     )
                 try:
                     with urllib.request.urlopen(
@@ -452,6 +330,7 @@ def build_notebook(agent_source: str) -> dict:
                         timeout=5,
                     ) as response:
                         if response.status == 200:
+                            print("vLLM server ready")
                             break
                 except Exception as exc:
                     last_error = exc
@@ -470,7 +349,7 @@ def build_notebook(agent_source: str) -> dict:
             if not TRUE_SUBMISSION:
                 validation_payload = {validation_request_payload!r}
                 validation_request = urllib.request.Request(
-                    "http://127.0.0.1:8000/v1/chat/completions",
+                    "http://127.0.0.1:{VLLM_PORT}/v1/chat/completions",
                     data=json.dumps(validation_payload).encode("utf-8"),
                     headers={{"Content-Type": "application/json"}},
                     method="POST",
@@ -488,6 +367,14 @@ def build_notebook(agent_source: str) -> dict:
                         "EXP-001 validation inference returned no choices"
                     )
                 print("EXP-001 model validation inference succeeded")
+                server.terminate()
+                try:
+                    server.wait(timeout=30)
+                except subprocess.TimeoutExpired:
+                    server.kill()
+                    server.wait(timeout=10)
+                log_handle.close()
+                shutil.rmtree(site_packages, ignore_errors=True)
         """
     )
 
@@ -640,7 +527,7 @@ def build_metadata(*, username: str, kernel_slug: str) -> dict:
         "enable_internet": False,
         "machine_shape": "NvidiaRtxPro6000",
         "keywords": [],
-        "dataset_sources": [VLLM_RUNTIME_DATASET],
+        "dataset_sources": [VLLM_DATASET],
         "kernel_sources": [],
         "competition_sources": [COMPETITION_SLUG],
         "model_sources": [MODEL_SOURCE],
