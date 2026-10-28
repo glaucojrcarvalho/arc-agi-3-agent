@@ -151,7 +151,11 @@ The current model-baseline candidate and promotion gates are documented separate
 
 ## License
 
-Licensed under the Apache License 2.0. See [LICENSE](LICENSE).
+Submitter-authored code and methods in this repository are licensed under
+MIT No Attribution (MIT-0). See [LICENSE](LICENSE).
+
+Third-party dependencies retain their own licenses and are not relicensed by
+this repository.
 
 ## Disclaimer
 
