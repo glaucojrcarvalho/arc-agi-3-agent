@@ -23,7 +23,7 @@ class KaggleExp001BuilderTests(unittest.TestCase):
 
         self.assertEqual(metadata["machine_shape"], "NvidiaRtxPro6000")
         self.assertFalse(metadata["enable_internet"])
-        self.assertEqual(metadata["dataset_sources"], [module.VLLM_DATASET])
+        self.assertEqual(metadata["dataset_sources"], [module.VLLM_RUNTIME_DATASET])
         self.assertEqual(metadata["model_sources"], [module.MODEL_SOURCE])
         self.assertEqual(
             metadata["competition_sources"],
