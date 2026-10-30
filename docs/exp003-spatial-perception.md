@@ -39,17 +39,21 @@ Observed prompt character-count ratios versus raw arrays:
 ls20 0.80, vc33 0.72, tn36 0.79, bp35 0.50.
 These are character counts, not token or latency measurements.
 
-One-action click experiments reset the games with seed zero.
-- vc33: seven fixed-grid clicks changed one cell each. Eight of ten
-  salient-region clicks changed one cell each, but two changed
-  265 cells each. None completed a level.
-- tn36: seven fixed-grid clicks changed one cell each. The
-  salient proposals included a 24,646-cell change, possibly
-  from a substantial expansion in frame layers or dimensions.
-  No levels were completed.
+Balanced one-action public click diagnostics reset the game with seed
+zero for every click and use seven fixed-grid and seven salient-region
+coordinates in each of six click-capable games: vc33, tn36, s5i5,
+lp85, ft09, r11l. Across 42 clicks per strategy:
+- Fixed-grid: 11 clicks changed more than one observed cell.
+- Salient regions: 19 clicks changed more than one observed cell.
+- Neither strategy completed any level. These are action effects,
+  not ARC-AGI-3 scores or a statistical performance claim.
+- In individual games, some salient clicks caused very large frame
+  changes (including possible layer/dimension expansion), without
+  corresponding level progress.
 
-Effect does not necessarily equal progress; the sample sizes differ
-and none of these are official Kaggle leaderboard scores.
+The two strategies are not randomly assigned and these are tiny
+public-game samples; different state effects do not establish
+superior hidden-game outcomes.
 
 Local diagnostics can be reproduced with the bundled script
 scripts/compare_public_click_targets.py against the official

@@ -18,7 +18,10 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--environments-dir", type=Path, required=True)
     parser.add_argument("--games", nargs="+", default=["vc33", "tn36"])
+    parser.add_argument("--max-clicks", type=int, default=7)
     args = parser.parse_args()
+    if not 1 <= args.max_clicks <= 7:
+        parser.error("max-clicks must be 1..7 for balanced comparison")
     arc = Arcade(
         operation_mode=OperationMode.OFFLINE,
         environments_dir=str(args.environments_dir),
@@ -47,7 +50,7 @@ def main() -> int:
         ]
         for label, positions in (("fixed_grid", baseline), ("salient_regions", targets)):
             rows = []
-            for t in positions:
+            for t in positions[:args.max_clicks]:
                 env.reset()
                 action = GameAction.ACTION6
                 data = {"x": t["x"], "y": t["y"]}
