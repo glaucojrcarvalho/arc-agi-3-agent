@@ -28,7 +28,7 @@ class EXP005BuilderTests(unittest.TestCase):
         self.assertIn("EXP-005 public probe result", notebook["cells"][1]["source"])
         self.assertIn('ARC_MODEL_PLANNING_ENABLED', notebook["cells"][1]["source"])
         self.assertIn('ARC_MODEL_MAX_TOKENS', notebook["cells"][1]["source"])
-        self.assertIn('for game in ("ls20", "vc33", "r11l", "tn36")',
+        self.assertIn('games = ("ls20", "vc33", "r11l", "tn36")',
                       notebook["cells"][1]["source"])
         self.assertIn("action_trace", notebook["cells"][1]["source"])
         self.assertEqual(metadata["id"], "test-owner/arc-agi-3-exp-005-persistent-reasoning-policy")
