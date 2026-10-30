@@ -71,3 +71,22 @@ any official submission quota.
 Source code can be public. Never commit Kaggle credentials, private
 environment files, account secrets, local machine details, personal
 conversation context, or raw private evaluation results.
+
+## Kaggle Phase A failure triage (2026-10-30)
+
+EXP-005 v1 returned KernelWorkerStatus.ERROR. Inspection of its Kaggle
+execution log confirms Python 3.12.13, requested RTX PRO 6000 Blackwell,
+successful vLLM startup, and the message
+EXP-005 model validation inference succeeded. The exception occurred when
+the public-game probe instantiated the agent, not during Qwen inference:
+AttributeError: MyAgent object has no attribute game_id.
+
+The smoke harness's stand-in agents.agent.Agent constructor was a no-op.
+EXP-005's NoveltyExplorer correctly expects the real base class to assign
+game_id. The probe now supplies this field and rejects missing IDs, with
+regression tests for keyword and positional construction. No private
+evaluation or competition submission is involved.
+
+This fix is a correctness repair, not evidence of improved public-game
+level completion or a higher official score. Rerun the Kaggle save-and-run
+Phase A before considering EXP-005 validated.

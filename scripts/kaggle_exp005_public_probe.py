@@ -24,17 +24,22 @@ def _frame(raw):
     )
 
 
-def run_public_probe(standalone_source: str, environments_root: str):
-    """Record observable game behavior; no claims about hidden-game score."""
-    root = Path(environments_root)
-    if not root.is_dir():
-        raise RuntimeError(f"public environment input not mounted: {root}")
+def load_probe_agent(standalone_source: str):
+    """Load the standalone agent with the game-ID contract of the real base.
+
+    Kaggle's public-game smoke runs outside the competition's agents
+    package. Its stand-in base must still initialize game_id: EXP-005's
+    novelty explorer requires this before its first action.
+    """
     agents = types.ModuleType("agents")
     agent_module = types.ModuleType("agents.agent")
 
     class Base:
         def __init__(self, *args, **kwargs):
-            pass
+            game_id = kwargs.get("game_id", args[0] if args else None)
+            if not isinstance(game_id, str) or not game_id:
+                raise ValueError("public probe requires a nonempty game_id")
+            self.game_id = game_id
 
     agent_module.Agent = Base
     agents.agent = agent_module
@@ -42,7 +47,15 @@ def run_public_probe(standalone_source: str, environments_root: str):
     sys.modules["agents.agent"] = agent_module
     namespace: dict = {"__name__": "__exp005_probe__"}
     exec(compile(standalone_source, "exp005_standalone.py", "exec"), namespace, namespace)
-    agent_cls = namespace["MyAgent"]
+    return namespace["MyAgent"]
+
+
+def run_public_probe(standalone_source: str, environments_root: str):
+    """Record observable game behavior; no claims about hidden-game score."""
+    root = Path(environments_root)
+    if not root.is_dir():
+        raise RuntimeError(f"public environment input not mounted: {root}")
+    agent_cls = load_probe_agent(standalone_source)
     from arc_agent.state import diff_frames
     arcade = Arcade(
         operation_mode=OperationMode.OFFLINE,
