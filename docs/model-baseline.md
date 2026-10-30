@@ -1,34 +1,26 @@
 # Model Baseline Plan
 
-This document defines the intended first model-driven ARC-AGI-3 experiment. It is a planning artifact, not a claim that the configuration has already been evaluated.
+This document defines the first model-driven ARC-AGI-3 experiment.
 
 ## Objective
 
-`EXP-001` should answer one narrow question:
+`EXP-001` asks one narrow question:
 
-> How much performance does a capable local model provide when it selects actions directly from the current environment state, before adding persistent memory, transition heuristics, or planning?
+> How much performance does a capable local model provide when it selects actions directly from the current environment state, before adding persistent memory, transition heuristics, reflection, or planning?
 
-Keeping this baseline small gives later experiments a useful control.
+The measured `EXP-000` local random-policy score (`0.08612196364871753`) is the control.
 
-## Current candidate
+## Selected candidate
 
-As of 2026-09-18, the leading practical candidate for the first model baseline is a publicly available **Qwen3.8 27B FP8** checkpoint running locally on Kaggle's ARC-AGI-3 RTX Pro 6000 environment.
+As of 2026-09-18, the selected candidate family is **Qwen3.8 27B FP8** served locally on Kaggle's RTX Pro 6000 environment.
 
-Reasons for treating it as the initial candidate:
+Current public ARC-AGI-3 notebooks demonstrate successful Qwen3.8 27B FP8 runs at roughly 2 hours 20 minutes on RTX Pro 6000. The official `Qwen/Qwen3.8-27B` model is Apache-2.0 licensed, supports OpenAI-compatible serving through vLLM/SGLang, and allows thinking mode to be disabled per request.
 
-- recent public ARC-AGI-3 notebooks use Qwen3.8 27B FP8 successfully;
-- a recent public notebook reports a successful runtime of roughly 2 hours 20 minutes on RTX Pro 6000, below the competition's 9-hour GPU limit;
-- public Duck-derived notebooks using the model provide a useful external reference point;
-- the competition explicitly permits freely and publicly available pretrained models, while evaluation runs without internet access;
-- the official `Qwen/Qwen3.8-27B` model repository is Apache-2.0 licensed and exposes image-text-to-text inference, leaving both textual-grid and image observations available for later controlled experiments.
-
-The official full-precision model is large, so the initial Kaggle candidate is an FP8 packaging suitable for the available accelerator rather than an assumption that the full checkpoint should be loaded directly.
-
-This does **not** make the model a fixed dependency. We will only adopt it after confirming that the exact public checkpoint, inference stack, model license, and Kaggle attachment workflow are reproducible.
+The exact Kaggle-attached FP8 artifact used for an evaluated run must be recorded with the experiment provenance. A public repack or mirror is not treated as interchangeable until its source/provenance has been checked.
 
 ## EXP-001 constraints
 
-The first model experiment should intentionally exclude:
+The first model experiment intentionally excludes:
 
 - persistent transition memory;
 - explicit world models;
@@ -37,42 +29,68 @@ The first model experiment should intentionally exclude:
 - long-horizon search;
 - reflection loops;
 - RAG or external retrieval;
-- online APIs.
+- online model APIs;
+- image input.
 
 Target flow:
 
 ```text
 current observation
         ↓
-compact model input
+compact text serialization
         ↓
-local model inference
+localhost OpenAI-compatible model server
         ↓
-structured action proposal
+strict JSON action proposal
         ↓
 action validation
         ↓
 ARC environment
 ```
 
-The action validator is infrastructure, not additional reasoning. It should reject malformed or unavailable actions and provide a deterministic fallback.
+Transport failures fail the run rather than silently degrading into a non-model policy. Invalid or unavailable model action proposals use a deterministic legal fallback and increment a fallback counter.
+
+## Runtime contract
+
+The agent expects a local OpenAI-compatible endpoint:
+
+```bash
+export ARC_MODEL_NAME="Qwen/Qwen3.8-27B"
+export ARC_MODEL_ENDPOINT="http://127.0.0.1:8000/v1/chat/completions"
+```
+
+`ARC_MODEL_ENDPOINT` is deliberately restricted to localhost/loopback HTTP. This prevents EXP-001 from accidentally depending on an online inference API.
+
+Optional:
+
+```bash
+export ARC_MODEL_TIMEOUT_SECONDS="120"
+```
+
+The request is deterministic for this baseline:
+
+- `temperature=0.0`;
+- maximum response budget 128 tokens;
+- Qwen thinking disabled;
+- no preserved thinking;
+- one model request per non-reset action.
 
 ## Input representation
 
-Start with the smallest representation that preserves the environment state sufficiently for the model:
+The model receives only:
 
-1. current raw grid / textual representation;
-2. current game state and level progress;
-3. currently available actions;
-4. coordinate bounds for complex actions.
+1. current raw frame;
+2. current game state;
+3. completed-level count;
+4. currently available action ids;
+5. which available actions require coordinates;
+6. valid coordinate bounds.
 
-Image rendering, segmentation tools, state history, and observation diffs should be separate experiments rather than silently included in `EXP-001`.
-
-Because the candidate model is multimodal, image observations can be tested later as an explicit ablation rather than being mixed into the first model baseline.
+No previous frames or transition records are included.
 
 ## Output contract
 
-The model should emit a small structured object conceptually equivalent to:
+The model must return exactly one JSON object:
 
 ```json
 {
@@ -82,51 +100,49 @@ The model should emit a small structured object conceptually equivalent to:
 }
 ```
 
-For complex coordinate actions, `data` may contain `x` and `y` values. The runtime must validate the proposal against the environment's available actions and coordinate bounds before execution.
+For a complex action, `data` contains integer `x` and `y` values within the supplied bounds.
 
-`src/arc_agent/actions.py` implements strict JSON parsing, action availability checks, coordinate validation, and a deterministic fallback primitive independently from the model runtime.
+`src/arc_agent/actions.py` remains the execution gate. Malformed JSON, unavailable actions, or invalid coordinates cannot be executed directly.
 
 ## Submission packaging
 
-The official starter injects only one Python agent file into its generated notebook. Any EXP-001 implementation that imports `src/arc_agent/` must therefore be built through:
+EXP-001 imports code from `src/arc_agent/`, so the official starter must receive the generated standalone artifact:
 
 ```bash
 python scripts/build_standalone_agent.py
 ```
 
-The resulting `dist/my_agent.py` is the file that should be copied into the external starter. This packaging step is part of reproducibility and must be validated before an experiment is submitted.
+The packaging test executes the generated file in an isolated Python subprocess without the repository source tree on `PYTHONPATH`. This ensures a green test actually proves the embedded package is sufficient.
 
 ## Metrics
 
-In addition to the competition score, record where available:
+Record where available:
 
+- aggregate score;
 - total runtime;
 - number of actions;
+- model calls;
 - invalid model outputs;
 - validation fallbacks;
-- repeated actions;
-- no-op transitions;
 - level completions.
 
-These measurements will help distinguish model capability from harness quality.
+The primary comparison is EXP-001 versus EXP-000. Later memory/planning experiments should use EXP-001, not the random policy, as their model-policy control.
 
 ## External references
 
-- ARC Prize Milestone 1 write-up: https://arcprize.org/blog/arc-prize-2026-milestone-1
 - ARC-AGI-3 competition: https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3
 - ARC-AGI-3 public code page: https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3/code
-- Example Qwen3.8 27B FP8 public notebook: https://www.kaggle.com/code/mikedan7/arc-agi-3-qwen3-8-27b-fp8-submit
+- Public Qwen3.8 27B FP8 ARC-AGI-3 notebook: https://www.kaggle.com/code/mikedan7/arc-agi-3-qwen3-8-27b-fp8-submit
 - Official Qwen3.8 27B model: https://huggingface.co/Qwen/Qwen3.8-27B
 
 ## Promotion gate
 
-Do not replace `agent/my_agent.py` with the model policy until:
+Do not mark EXP-001 complete until:
 
-1. `EXP-000` has run successfully end-to-end;
-2. the selected model loads offline in the Kaggle environment;
-3. a minimal inference call completes within the available memory/runtime budget;
-4. the exact model source and license are documented;
-5. malformed action output is handled deterministically;
-6. `scripts/build_standalone_agent.py` produces a standalone agent that imports and runs successfully without the source tree present.
-
-Until those conditions are met, `EXP-000` remains the active submission agent.
+1. the exact FP8 model artifact and provenance are documented;
+2. the model loads offline in the Kaggle runtime;
+3. a minimal localhost inference call succeeds;
+4. the standalone agent runs without access to this repository's source tree;
+5. local ARC smoke tests succeed with the model server active;
+6. full-run provenance and artifact SHA-256 are captured;
+7. the measured result is recorded without mixing in later memory/planning changes.

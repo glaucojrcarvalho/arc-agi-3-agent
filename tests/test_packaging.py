@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import importlib.util
-import runpy
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,20 +22,27 @@ class PackagingTests(unittest.TestCase):
         source = "from __future__ import annotations\nVALUE = 7\n"
         self.assertEqual(build_module.build_standalone_source(source), source)
 
-    def test_internal_package_is_embedded_and_importable(self) -> None:
+    def test_internal_package_runs_without_source_tree(self) -> None:
         source = (
             "from __future__ import annotations\n"
             "from arc_agent.actions import deterministic_fallback\n"
-            "VALUE = deterministic_fallback([4, 2, 3])\n"
+            "print(deterministic_fallback([4, 2, 3]))\n"
         )
         bundled = build_module.build_standalone_source(source)
 
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "my_agent.py"
             path.write_text(bundled, encoding="utf-8")
-            namespace = runpy.run_path(str(path))
+            result = subprocess.run(
+                [sys.executable, "-I", str(path)],
+                cwd=directory,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
 
-        self.assertEqual(namespace["VALUE"], 2)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.stdout.strip(), "2")
 
     def test_forced_bundle_is_deterministic(self) -> None:
         source = "VALUE = 1\n"
