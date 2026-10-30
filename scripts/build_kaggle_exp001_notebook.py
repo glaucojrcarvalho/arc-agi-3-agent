@@ -173,6 +173,26 @@ def build_notebook(agent_source: str) -> dict:
                 check=True,
             )
 
+            # nvidia-smi is diagnostic only. Some GPU images do not expose
+            # the binary even when a CUDA driver is present.
+            # The actual gate is vLLM startup plus a chat-completion probe.
+            print("Requested Kaggle GPU: NvidiaRtxPro6000", flush=True)
+            print(
+                "CUDA_VISIBLE_DEVICES:",
+                os.environ.get("CUDA_VISIBLE_DEVICES", "<unset>"),
+                flush=True,
+            )
+            print(
+                "NVIDIA_VISIBLE_DEVICES:",
+                os.environ.get("NVIDIA_VISIBLE_DEVICES", "<unset>"),
+                flush=True,
+            )
+            print(
+                "NVIDIA device nodes:",
+                [str(path) for path in sorted(Path("/dev").glob("nvidia*"))],
+                flush=True,
+            )
+
             nvidia_smi = shutil.which("nvidia-smi")
             if not nvidia_smi:
                 for candidate in (
@@ -182,44 +202,59 @@ def build_notebook(agent_source: str) -> dict:
                     if Path(candidate).is_file():
                         nvidia_smi = candidate
                         break
-            if not nvidia_smi:
-                raise RuntimeError(
-                    "CUDA host preflight failed: nvidia-smi is unavailable"
+            if nvidia_smi:
+                gpu_probe = subprocess.run(
+                    [nvidia_smi, "--query-gpu=name", "--format=csv,noheader"],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                print(
+                    f"nvidia-smi exit={{gpu_probe.returncode}} "
+                    f"names={{gpu_probe.stdout.strip()!r}} "
+                    f"error={{gpu_probe.stderr.strip()!r}}",
+                    flush=True,
+                )
+            else:
+                print(
+                    "nvidia-smi unavailable; proceeding to vLLM CUDA "
+                    "runtime validation",
+                    flush=True,
                 )
 
-            gpu_probe = subprocess.run(
-                [
-                    nvidia_smi,
-                    "--query-gpu=name",
-                    "--format=csv,noheader",
-                ],
-                capture_output=True,
-                text=True,
-            )
-            print(gpu_probe.stdout)
-            if gpu_probe.returncode != 0:
-                raise RuntimeError(
-                    "CUDA host preflight failed: "
-                    + gpu_probe.stderr.strip()
+            # CUDA Driver API works independently of the PyTorch wheel and
+            # provides useful diagnostics if the driver is missing.
+            import ctypes
+
+            try:
+                cuda_driver = ctypes.CDLL("libcuda.so.1")
+                cuda_driver.cuInit.argtypes = [ctypes.c_uint]
+                cuda_driver.cuInit.restype = ctypes.c_int
+                init_code = cuda_driver.cuInit(0)
+                if init_code == 0:
+                    cuda_driver.cuDeviceGetCount.argtypes = [
+                        ctypes.POINTER(ctypes.c_int)
+                    ]
+                    cuda_driver.cuDeviceGetCount.restype = ctypes.c_int
+                    gpu_count = ctypes.c_int(-1)
+                    count_code = cuda_driver.cuDeviceGetCount(
+                        ctypes.byref(gpu_count)
+                    )
+                    print(
+                        f"CUDA driver device count status={{count_code}} "
+                        f"count={{gpu_count.value}}",
+                        flush=True,
+                    )
+                else:
+                    print(
+                        f"CUDA driver initialization returned {{init_code}}",
+                        flush=True,
+                    )
+            except (OSError, AttributeError) as exc:
+                print(
+                    f"CUDA driver diagnostic unavailable: {{exc}}",
+                    flush=True,
                 )
-            gpu_names = [
-                line.strip()
-                for line in gpu_probe.stdout.splitlines()
-                if line.strip()
-            ]
-            if len(gpu_names) != 1:
-                raise RuntimeError(
-                    f"Expected one CUDA GPU, found {{gpu_names}}"
-                )
-            if "rtx pro 6000" not in gpu_names[0].lower():
-                raise RuntimeError(
-                    "Expected RTX Pro 6000, found "
-                    + gpu_names[0]
-                )
-            print(
-                "CUDA GPU check passed for rtx-pro-6000 x1: "
-                f"{{gpu_names}}"
-            )
 
             requirements = wheelhouse / "requirements.lock"
             if not requirements.is_file():

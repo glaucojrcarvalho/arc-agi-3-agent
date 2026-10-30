@@ -54,20 +54,21 @@ class KaggleExp001BuilderTests(unittest.TestCase):
         self.assertIn("server_env", source)
         self.assertNotIn("https://api.openai.com", source)
 
-    def test_host_gpu_preflight_matches_taaf_bootstrap(self) -> None:
+    def test_gpu_diagnostics_are_non_blocking(self) -> None:
         notebook = module.build_notebook("VALUE = 1\n")
-        source = "\n".join(
-            cell.get("source", "")
-            for cell in notebook["cells"]
-            if cell.get("cell_type") == "code"
-        )
+        setup_source = notebook["cells"][1]["source"]
 
-        self.assertIn("nvidia-smi", source)
-        self.assertIn("--query-gpu=name", source)
-        self.assertIn("rtx pro 6000", source.lower())
-        self.assertIn("CUDA GPU check passed", source)
-        self.assertNotIn("torch.cuda.is_available()", source)
-        self.assertNotIn("torch.cuda.device_count()", source)
+        self.assertIn("nvidia-smi", setup_source)
+        self.assertIn("--query-gpu=name", setup_source)
+        self.assertIn("ctypes.CDLL", setup_source)
+        self.assertIn("cuDeviceGetCount", setup_source)
+        self.assertIn("proceeding to vLLM CUDA", setup_source)
+        self.assertNotIn(
+            "CUDA host preflight failed: nvidia-smi is unavailable",
+            setup_source,
+        )
+        self.assertNotIn("torch.cuda.is_available()", setup_source)
+        self.assertNotIn("torch.cuda.device_count()", setup_source)
 
     def test_expected_model_mount_uses_kaggle_input_slug(self) -> None:
         self.assertEqual(

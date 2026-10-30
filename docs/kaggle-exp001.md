@@ -61,7 +61,7 @@ During ordinary save-and-run, the notebook boots the pinned Qwen/vLLM runtime an
 During the competition rerun, it reuses the same model boot path and then:
 
 1. installs ARC runtime packages from the competition wheel directory;
-2. resolves the public ARC3 vLLM wheelhouse and verifies the Kaggle host exposes exactly one RTX Pro 6000 through `nvidia-smi`;
+2. resolves the public ARC3 vLLM wheelhouse and collects non-blocking diagnostics on GPU availability, including CUDA device nodes, driver device count, and optional nvidia-smi;
 3. installs the wheelhouse's pinned requirements into isolated `/kaggle/working/vllm-site-packages` and exposes only that target through `PYTHONPATH`;
 4. launches Qwen3.8-27B FP8 on `127.0.0.1:1234` with the same core vLLM flags used by the public TAAF Kaggle bootstrap;
 5. waits for the OpenAI-compatible server to become healthy and, during ordinary save-and-run, performs a real chat-completion validation;
