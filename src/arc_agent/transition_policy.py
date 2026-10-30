@@ -35,15 +35,24 @@ def freeze_frame(frame: Frame) -> tuple[tuple[tuple[int, ...], ...], ...]:
 class TransitionPolicy:
     """Per-game transition monitor, bounded feedback, and no-op rejection."""
 
-    def __init__(self, *, memory_limit: int = 6, state_limit: int = 256) -> None:
+    def __init__(
+        self, *, memory_limit: int = 6, state_limit: int = 256,
+        click_cooldown: int = 0,
+    ) -> None:
         if memory_limit <= 0 or state_limit <= 0:
             raise ValueError("history bounds must be positive")
+        if not 0 <= click_cooldown <= 32:
+            raise ValueError("click cooldown must be between 0 and 32")
         self._memory: deque[dict[str, Any]] = deque(maxlen=memory_limit)
         self._blocked: dict[tuple[int, str], set[tuple[int, tuple[tuple[str, int], ...]]]] = {}
         self._state_fifo: deque[tuple[int, str]] = deque()
         self._state_limit = state_limit
         self._pending: PendingAction | None = None
         self._level: int | None = None
+        self._click_cooldown = click_cooldown
+        self._recent_clicks: deque[tuple[int, int, int, int]] = deque(
+            maxlen=max(1, click_cooldown)
+        )
         self.turns = 0
         self.proven_noops = 0
         self.redirects = 0
@@ -80,6 +89,7 @@ class TransitionPolicy:
                 self.proven_noops += 1
             if progressed:
                 self.progress_events += 1
+                self._recent_clicks.clear()
                 self._blocked.clear()
                 self._state_fifo.clear()
             change_bounds = None
@@ -126,6 +136,28 @@ class TransitionPolicy:
     ) -> bool:
         return self._key(action_id, data) in self._blocked.get((level, fingerprint), set())
 
+    def cooled_clicks(self, level: int) -> list[dict[str, int]]:
+        """Recent click coordinates to avoid temporarily; not proof of failure."""
+        if self._click_cooldown == 0:
+            return []
+        result: list[dict[str, int]] = []
+        seen: set[tuple[int, int, int]] = set()
+        for click_level, action_id, x, y in reversed(self._recent_clicks):
+            key = (action_id, x, y)
+            if click_level != level or key in seen:
+                continue
+            seen.add(key)
+            result.append({"action": action_id, "x": x, "y": y})
+        return result
+
+    def _cooled(self, level: int, action_id: int, data: dict[str, int]) -> bool:
+        if self._click_cooldown == 0:
+            return False
+        x, y = data.get("x"), data.get("y")
+        if not isinstance(x, int) or not isinstance(y, int):
+            return False
+        return (level, action_id, x, y) in self._recent_clicks
+
     @staticmethod
     def _candidate_coordinates(width: int, height: int) -> list[dict[str, int]]:
         """Small spread of generic exploratory points, never game-specific."""
@@ -164,7 +196,10 @@ class TransitionPolicy:
         """Accept a novel legal proposal, otherwise explore without another LLM call."""
         if proposed is not None:
             action_id, data = proposed
-            if not self.is_blocked(level=level, fingerprint=fingerprint, action_id=action_id, data=data):
+            if (
+                not self.is_blocked(level=level, fingerprint=fingerprint, action_id=action_id, data=data)
+                and not self._cooled(level, action_id, data)
+            ):
                 return action_id, data, False
 
         options: list[tuple[int, dict[str, int]]] = []
@@ -195,6 +230,16 @@ class TransitionPolicy:
         start = self.turns % len(options)
         rotated = options[start:] + options[:start]
         for action_id, data in rotated:
+            if (
+                not self.is_blocked(level=level, fingerprint=fingerprint, action_id=action_id, data=data)
+                and not self._cooled(level, action_id, data)
+            ):
+                self.redirects += 1
+                return action_id, data, True
+
+        # All candidates may be on short cooldown. Use any unblocked legal
+        # action rather than deadlocking or resetting the game.
+        for action_id, data in rotated:
             if not self.is_blocked(level=level, fingerprint=fingerprint, action_id=action_id, data=data):
                 self.redirects += 1
                 return action_id, data, True
@@ -217,8 +262,17 @@ class TransitionPolicy:
             action_id=action_id,
             data=tuple(sorted(data.items())),
         )
+        if (
+            self._click_cooldown
+            and isinstance(data.get("x"), int)
+            and isinstance(data.get("y"), int)
+        ):
+            self._recent_clicks.append(
+                (level, action_id, int(data["x"]), int(data["y"]))
+            )
         self.turns += 1
 
     def on_reset(self) -> None:
-        """A restart invalidates one-step observations, not all learned failures."""
+        """A restart invalidates recent click cooldowns and pending observations."""
         self._pending = None
+        self._recent_clicks.clear()

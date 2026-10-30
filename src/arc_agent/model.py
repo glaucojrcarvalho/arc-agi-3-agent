@@ -75,6 +75,7 @@ def build_policy_prompt(
     blocked_actions: list[dict[str, Any]] | None = None,
     frame_representation: str = "raw",
     click_candidates: list[dict[str, int]] | None = None,
+    recent_click_cooldowns: list[dict[str, int]] | None = None,
 ) -> str:
     """Serialize the observation, actions and optional bounded feedback."""
     payload = {
@@ -105,6 +106,13 @@ def build_policy_prompt(
         payload["candidate_click_note"] = (
             "Candidate pixels belong to visible color regions, not verified targets; "
             "they are suggestions only. Choose legal x/y within the frame."
+        )
+    if recent_click_cooldowns is not None:
+        payload["recent_click_cooldowns"] = recent_click_cooldowns[:16]
+        payload["cooldown_note"] = (
+            "These click locations were already attempted recently without "
+            "level progress. Prefer exploring another visible location. "
+            "This is a temporary exploration cooldown, not proof of failure."
         )
     if transition_feedback is not None:
         payload["recent_transitions"] = transition_feedback[-6:]
