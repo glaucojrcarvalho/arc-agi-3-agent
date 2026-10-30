@@ -82,10 +82,28 @@ class TransitionPolicy:
                 self.progress_events += 1
                 self._blocked.clear()
                 self._state_fifo.clear()
+            change_bounds = None
+            change_samples = []
+            if delta.changes:
+                change_bounds = {
+                    "left": min(change.coordinate[2] for change in delta.changes),
+                    "top": min(change.coordinate[1] for change in delta.changes),
+                    "right": max(change.coordinate[2] for change in delta.changes),
+                    "bottom": max(change.coordinate[1] for change in delta.changes),
+                }
+                stride = max(1, len(delta.changes) // 12)
+                for change in delta.changes[::stride][:12]:
+                    layer_id, row, col = change.coordinate
+                    change_samples.append({
+                        "layer": layer_id, "x": col, "y": row,
+                        "before": change.before, "after": change.after,
+                    })
             self._memory.append({
                 "action": pending.action_id,
                 "data": dict(pending.data),
                 "changed_cells": delta.changed_cells,
+                "change_bounds": change_bounds,
+                "change_samples": change_samples,
                 "levels_delta": level - pending.level,
                 "state_changed": state != pending.state,
                 "proven_noop": same,
@@ -141,6 +159,7 @@ class TransitionPolicy:
         width: int,
         height: int,
         proposed: tuple[int, dict[str, int]] | None,
+        candidate_coordinates: Sequence[dict[str, int]] | None = None,
     ) -> tuple[int, dict[str, int], bool]:
         """Accept a novel legal proposal, otherwise explore without another LLM call."""
         if proposed is not None:
@@ -151,8 +170,21 @@ class TransitionPolicy:
         options: list[tuple[int, dict[str, int]]] = []
         for action_id in sorted(set(action_ids)):
             if action_id in complex_action_ids:
-                for point in self._candidate_coordinates(width, height):
-                    options.append((action_id, point))
+                candidates = [
+                    {"x": int(item["x"]), "y": int(item["y"])}
+                    for item in (candidate_coordinates or [])
+                    if (
+                        isinstance(item.get("x"), int)
+                        and not isinstance(item.get("x"), bool)
+                        and isinstance(item.get("y"), int)
+                        and not isinstance(item.get("y"), bool)
+                        and 0 <= item["x"] < width
+                        and 0 <= item["y"] < height
+                    )
+                ]
+                for point in candidates + self._candidate_coordinates(width, height):
+                    if (action_id, point) not in options:
+                        options.append((action_id, point))
             else:
                 options.append((action_id, {}))
 
