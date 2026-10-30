@@ -8,7 +8,7 @@ import types
 from pathlib import Path
 
 from arc_agi import Arcade, OperationMode
-from arcengine import FrameData
+from arcengine import FrameData, GameAction
 
 
 def _frame(raw):
@@ -50,6 +50,41 @@ def load_probe_agent(standalone_source: str):
     return namespace["MyAgent"]
 
 
+def _action_reasoning(action) -> dict:
+    """Normalize optional reasoning for the public-game transport.
+
+    MyAgent returns GameAction.RESET directly for GAME_OVER/NOT_PLAYED;
+    that enum value has no reasoning attribute. Enum instances are
+    singletons, so never reuse reasoning accidentally attached to RESET.
+    """
+    if action is GameAction.RESET:
+        return {}
+    reasoning = getattr(action, "reasoning", None)
+    if reasoning is None:
+        return {}
+    if not isinstance(reasoning, dict):
+        raise TypeError("public probe expected dict action reasoning")
+    return dict(reasoning)
+
+
+def _save_public_probe(results: list[dict], *, complete: bool,
+                       path: str = "/kaggle/working/exp005-public-probe.json") -> None:
+    """Write a recoverable result after each public game, not just the last.
+
+    If a later public game fails, earlier complete traces remain available
+    without scraping noisy notebook logs.
+    """
+    Path(path).write_text(
+        json.dumps({
+            "model": "Qwen3.8-27B FP8",
+            "probe_complete": complete,
+            "completed_games": len(results),
+            "results": results,
+        }, indent=2),
+        encoding="utf-8",
+    )
+
+
 def run_public_probe(standalone_source: str, environments_root: str):
     """Record observable game behavior; no claims about hidden-game score."""
     root = Path(environments_root)
@@ -63,7 +98,8 @@ def run_public_probe(standalone_source: str, environments_root: str):
         recordings_dir="/kaggle/working/exp005-public-recordings",
     )
     results = []
-    for game in ("ls20", "vc33", "r11l", "tn36"):
+    games = ("ls20", "vc33", "r11l", "tn36")
+    for game in games:
         env = arcade.make(game, seed=0, save_recording=False)
         if env is None:
             raise RuntimeError(f"public game unavailable: {game}")
@@ -74,36 +110,41 @@ def run_public_probe(standalone_source: str, environments_root: str):
         agent = agent_cls(game_id=game)
         actions = []
         trace = []
+        resets = 0
+        highest_level = int(current.levels_completed or 0)
         game_started = time.monotonic()
         for _ in range(80):
             if agent.is_done([], current):
                 break
             action = agent.choose_action([], current)
             actions.append(action.value)
-            next_raw = env.step(
-                action,
-                data=action.action_data.model_dump(),
-                reasoning=action.reasoning,
-            )
+            # Terminal-state RESET is intentionally emitted without
+            # per-turn metadata, unlike model/heuristic actions.
+            reasoning = _action_reasoning(action)
+            action_data = action.action_data.model_dump()
+            if action is GameAction.RESET:
+                resets += 1
+            next_raw = env.step(action, data=action_data, reasoning=reasoning)
             if next_raw is None:
                 raise RuntimeError(f"game returned null frame: {game}")
             after = _frame(next_raw)
             delta = diff_frames(current.frame, after.frame)
-            action_data = action.action_data.model_dump()
+            highest_level = max(highest_level, int(after.levels_completed or 0))
             trace.append({
                 "action_id": action.value,
+                "is_reset": action is GameAction.RESET,
                 "x": action_data.get("x"),
                 "y": action_data.get("y"),
                 "changed_cells": delta.changed_cells,
                 "levels_completed": after.levels_completed,
-                "redirected": bool(action.reasoning.get("redirected")),
-                "spatial_candidates": int(action.reasoning.get("spatial_candidates", 0)),
-                "planned_action": bool(action.reasoning.get("planned_action", False)),
-                "heuristic_step": bool(action.reasoning.get("heuristic_step", False)),
-                "steps_without_progress": int(action.reasoning.get("steps_without_progress", 0)),
-                "belief_revisions": int(action.reasoning.get("belief_revisions", 0)),
-                "recent_click_cooldown_count": int(action.reasoning.get("recent_click_cooldown_count", 0)),
-                "model_reason": str(action.reasoning.get("reason", ""))[:90],
+                "redirected": bool(reasoning.get("redirected")),
+                "spatial_candidates": int(reasoning.get("spatial_candidates", 0)),
+                "planned_action": bool(reasoning.get("planned_action", False)),
+                "heuristic_step": bool(reasoning.get("heuristic_step", False)),
+                "steps_without_progress": int(reasoning.get("steps_without_progress", 0)),
+                "belief_revisions": int(reasoning.get("belief_revisions", 0)),
+                "recent_click_cooldown_count": int(reasoning.get("recent_click_cooldown_count", 0)),
+                "model_reason": str(reasoning.get("reason", ""))[:90],
             })
             current = after
             if time.monotonic() - game_started > 720:
@@ -114,6 +155,8 @@ def run_public_probe(standalone_source: str, environments_root: str):
             "actions": len(actions),
             "distinct_actions": len(set(actions)),
             "levels_completed": current.levels_completed,
+            "max_levels_completed": highest_level,
+            "resets": resets,
             "state": current.state.name,
             "noops": agent._feedback.proven_noops,
             "redirects": agent._feedback.redirects,
@@ -131,8 +174,5 @@ def run_public_probe(standalone_source: str, environments_root: str):
             flush=True,
         )
         results.append(row)
-    Path("/kaggle/working/exp005-public-probe.json").write_text(
-        json.dumps({"model": "Qwen3.8-27B FP8", "results": results}, indent=2),
-        encoding="utf-8",
-    )
+        _save_public_probe(results, complete=len(results) == len(games))
     return results
