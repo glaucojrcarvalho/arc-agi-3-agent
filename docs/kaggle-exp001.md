@@ -49,10 +49,11 @@ Use the Kaggle CLI from the external starter environment so credentials remain o
 cd /path/to/ARC-AGI-3-Kaggle-Starter
 
 .venv/bin/kaggle kernels push \
-  -p /path/to/arc-agi-3-exp-001/dist/kaggle-exp001
+  -p /path/to/arc-agi-3-exp-001/dist/kaggle-exp001 \
+  --accelerator NvidiaRtxPro6000
 ```
 
-This starts Kaggle's save-and-run phase. It does not itself spend a competition submission.
+This starts Kaggle's save-and-run phase using the explicitly requested RTX PRO 6000 accelerator. Both the kernel metadata (`enable_gpu: true`, `machine_shape: NvidiaRtxPro6000`) and the CLI flag are intentional. Do not infer that the batch execution has CUDA merely from the accelerator selection in the interactive editor: verify the batch logs separately. This does not itself spend a competition submission.
 
 ## Execution behavior
 
@@ -69,7 +70,7 @@ During the competition rerun, it reuses the same model boot path and then:
 7. registers the standalone EXP-001 agent with the ARC framework and runs it against the competition gateway;
 8. removes the temporary target install after ordinary validation so it is not persisted as notebook output.
 
-The notebook records the vLLM server log in `/kaggle/working/vllm-openai-server.log` for deployment debugging. The host GPU gate intentionally follows the TAAF pattern and uses `nvidia-smi`; it does not reject the deployment early based on `torch.cuda.is_available()` from the temporary target install.
+The notebook records the vLLM server log in `/kaggle/working/vllm-openai-server.log` for deployment debugging. GPU diagnostics (`nvidia-smi`, CUDA device nodes, and CUDA Driver API) do not reject the deployment solely because a diagnostic tool is unavailable. The definitive GPU check is starting the pinned vLLM server and completing a real inference probe. If the batch log shows no NVIDIA devices or `libcuda.so.1`, treat that as missing GPU access in that batch session rather than a Qwen model failure.
 
 ## Validation gate
 
