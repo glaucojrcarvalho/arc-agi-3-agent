@@ -19,10 +19,67 @@ class EXP005ProbeTests(unittest.TestCase):
         fake_arc_agi.OperationMode = object
         fake_arcengine = types.ModuleType("arcengine")
         fake_arcengine.FrameData = object
+        fake_arcengine.GameAction = types.SimpleNamespace(RESET=object())
         spec = importlib.util.spec_from_file_location("_exp005_probe_test", PROBE)
         self.assertIsNotNone(spec)
         module = importlib.util.module_from_spec(spec)
         return module, spec.loader, {"arc_agi": fake_arc_agi, "arcengine": fake_arcengine}
+
+    def test_reset_without_reasoning_is_valid(self):
+        module, loader, imports = self._load()
+        with patch.dict(sys.modules, imports):
+            loader.exec_module(module)
+            reset = types.SimpleNamespace()
+            class FakeActions:
+                RESET = reset
+            module.GameAction = FakeActions
+            self.assertEqual(module._action_reasoning(reset), {})
+            # Even if the singleton is contaminated by an earlier action,
+            # a reset must never transport stale metadata to the game.
+            reset.reasoning = {"stale_reasoning": True}
+            self.assertEqual(module._action_reasoning(reset), {})
+
+    def test_missing_reasoning_is_valid_but_bad_metadata_is_not(self):
+        module, loader, imports = self._load()
+        with patch.dict(sys.modules, imports):
+            loader.exec_module(module)
+            reset = types.SimpleNamespace()
+            class FakeActions:
+                RESET = reset
+            module.GameAction = FakeActions
+            other = types.SimpleNamespace()
+            self.assertEqual(module._action_reasoning(other), {})
+            other.reasoning = {"policy": "unit-test", "step": 2}
+            copied = module._action_reasoning(other)
+            self.assertEqual(copied, other.reasoning)
+            self.assertIsNot(copied, other.reasoning)
+            other.reasoning = "not a dictionary"
+            with self.assertRaisesRegex(TypeError, "dict action reasoning"):
+                module._action_reasoning(other)
+
+    def test_partial_results_are_checkpointed_per_public_game(self):
+        import json
+        import tempfile
+
+        module, loader, imports = self._load()
+        with patch.dict(sys.modules, imports):
+            loader.exec_module(module)
+            with tempfile.TemporaryDirectory() as temp:
+                path = str(Path(temp) / "probe.json")
+                module._save_public_probe([{"game": "ls20", "levels_completed": 0}],
+                                          complete=False, path=path)
+                partial = json.loads(Path(path).read_text())
+                self.assertFalse(partial["probe_complete"])
+                self.assertEqual(partial["completed_games"], 1)
+                self.assertEqual(partial["results"][0]["game"], "ls20")
+                module._save_public_probe(
+                    [{"game": "ls20", "levels_completed": 0},
+                     {"game": "vc33", "levels_completed": 1}],
+                    complete=True, path=path,
+                )
+                full = json.loads(Path(path).read_text())
+                self.assertTrue(full["probe_complete"])
+                self.assertEqual(full["completed_games"], 2)
 
     def test_keyword_game_id_survives_base_constructor(self):
         module, loader, imports = self._load()
