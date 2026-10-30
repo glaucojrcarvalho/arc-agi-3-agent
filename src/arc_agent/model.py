@@ -20,7 +20,7 @@ Choose exactly one currently legal action from the provided action ids.
 Return exactly one JSON object with keys: action, data, reason.
 For complex actions, data must contain integer x and y coordinates within the provided bounds.
 For non-complex actions, data must be an empty object.
-Keep reason short. Do not include markdown or any text outside the JSON object."""
+Keep reason short. If recent transitions or proven no-op actions are supplied, use them to avoid repeating actions that were confirmed ineffective in the exact same state. A changing frame does not necessarily indicate progress. Do not include markdown or any text outside the JSON object."""
 
 
 class ModelClientError(RuntimeError):
@@ -71,8 +71,10 @@ def build_policy_prompt(
     complex_action_ids: list[int],
     width: int,
     height: int,
+    transition_feedback: list[dict[str, Any]] | None = None,
+    blocked_actions: list[dict[str, Any]] | None = None,
 ) -> str:
-    """Serialize only the current observation and action contract."""
+    """Serialize the observation, actions and optional bounded feedback."""
     payload = {
         "state": state,
         "levels_completed": levels_completed,
@@ -86,6 +88,10 @@ def build_policy_prompt(
         },
         "frame": frame,
     }
+    if transition_feedback is not None:
+        payload["recent_transitions"] = transition_feedback[-6:]
+    if blocked_actions is not None:
+        payload["proven_noop_actions_here"] = blocked_actions[:24]
     return json.dumps(payload, separators=(",", ":"), ensure_ascii=True)
 
 
