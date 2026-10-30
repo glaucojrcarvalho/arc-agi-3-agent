@@ -68,3 +68,12 @@ during the hidden competition rerun.
 Never commit local paths, credentials, private conversation context, or
 unreviewed downloaded artifacts. Keep Phase A and official submission
 clearly distinct.
+
+## Runtime compatibility (v1 failure)
+
+EXP-002 Kaggle v1 unexpectedly used Python 3.13 (a newer Kaggle image),
+while the offline vLLM wheelhouse expects Python 3.12. The dependency
+aiohttp 3.13.5 was unavailable for Python 3.13, and Phase A ended
+without loading the model. Version 2 pins the same Python 3.12-compatible
+Kaggle container digest used by successful EXP-001 v15, and logs
+the interpreter version before installation. No official submission was made.

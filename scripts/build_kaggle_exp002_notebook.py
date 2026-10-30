@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_AGENT = ROOT / "dist" / "exp002_agent.py"
 DEFAULT_OUTPUT = ROOT / "dist" / "kaggle-exp002"
 DEFAULT_SLUG = "arc-agi-3-exp-002-transition-aware-policy"
+# Verified Python 3.12-compatible image from EXP-001 v15; default image moved to 3.13.
+PY312_DOCKER_IMAGE = "gcr.io/kaggle-private-byod/python@sha256:37c64f7dd9c54116ecd1bcc88817c5469b88387388fade02bfa8bf3fc647d461"
 
 
 def build_artifacts(*, agent_source: str, username: str, kernel_slug: str) -> tuple[dict, dict]:
@@ -21,6 +23,9 @@ def build_artifacts(*, agent_source: str, username: str, kernel_slug: str) -> tu
     )
     notebook["cells"][1]["source"] = notebook["cells"][1]["source"].replace(
         "EXP-001 model validation", "EXP-002 model validation"
+    )
+    notebook["cells"][1]["source"] = notebook["cells"][1]["source"].replace(
+        "if BOOT_MODEL:", "print(\"EXP-002 Python runtime:\", sys.version, flush=True)\nif BOOT_MODEL:", 1
     )
     # After real model inference succeeds and before stopping vLLM, play a
     # bounded subset of PUBLIC games with the real EXP-002 agent.
@@ -42,6 +47,7 @@ def build_artifacts(*, agent_source: str, username: str, kernel_slug: str) -> tu
     )
     metadata = base.build_metadata(username=username, kernel_slug=kernel_slug)
     metadata["title"] = "ARC-AGI-3 EXP-002 Transition-Aware Policy"
+    metadata["docker_image"] = PY312_DOCKER_IMAGE
     return notebook, metadata
 
 

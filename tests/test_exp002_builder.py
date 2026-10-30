@@ -21,6 +21,8 @@ class EXP002BuilderTests(unittest.TestCase):
         self.assertTrue(metadata["enable_gpu"])
         self.assertTrue(metadata["is_private"])
         self.assertEqual(metadata["machine_shape"], "NvidiaRtxPro6000")
+        self.assertEqual(metadata["docker_image"], builder.PY312_DOCKER_IMAGE)
+        self.assertIn("EXP-002 Python runtime", notebook["cells"][1]["source"])
         self.assertIn("EXP-002", notebook["cells"][0]["source"])
         self.assertIn("EXP-002 model validation inference succeeded", notebook["cells"][1]["source"])
         for index, cell in enumerate(notebook["cells"]):
