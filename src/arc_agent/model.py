@@ -73,6 +73,8 @@ def build_policy_prompt(
     height: int,
     transition_feedback: list[dict[str, Any]] | None = None,
     blocked_actions: list[dict[str, Any]] | None = None,
+    frame_representation: str = "raw",
+    click_candidates: list[dict[str, int]] | None = None,
 ) -> str:
     """Serialize the observation, actions and optional bounded feedback."""
     payload = {
@@ -86,8 +88,24 @@ def build_policy_prompt(
             "y_min": 0,
             "y_max_exclusive": height,
         },
-        "frame": frame,
     }
+    if frame_representation == "raw":
+        payload["frame"] = frame
+    elif frame_representation == "symbol_grid":
+        from .perception import symbol_grid
+        payload["visual_observation"] = symbol_grid(frame)
+        payload["pixel_coordinate_convention"] = (
+            "x is column 0..width-1, y is row 0..height-1; "
+            "a hex character is an exact pixel color index, not a text character."
+        )
+    else:
+        raise ValueError("unsupported frame_representation")
+    if click_candidates is not None:
+        payload["candidate_click_pixels"] = click_candidates[:24]
+        payload["candidate_click_note"] = (
+            "Candidate pixels belong to visible color regions, not verified targets; "
+            "they are suggestions only. Choose legal x/y within the frame."
+        )
     if transition_feedback is not None:
         payload["recent_transitions"] = transition_feedback[-6:]
     if blocked_actions is not None:
