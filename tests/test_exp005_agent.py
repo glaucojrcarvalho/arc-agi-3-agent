@@ -94,6 +94,51 @@ class Exp005AgentTests(unittest.TestCase):
         self.assertEqual(agent._belief.progress_events if hasattr(agent._belief,"progress_events") else 0,0)
         self.assertEqual(agent._feedback.progress_events,0)
 
+    def test_coordinate_controls_switch_to_novelty_early(self):
+        agent, model = self.agent('{"action":6,"data":{"x":0,"y":0}}')
+        flags = []
+        for turn in range(24):
+            frame = FakeFrameData(
+                frame=[[[turn % 5]]], available_actions=[6]
+            )
+            chosen = agent.choose_action([], frame)
+            flags.append(dict(chosen.reasoning))
+        self.assertEqual(agent._belief.max_stagnation, 8)
+        self.assertEqual(flags[8]["novelty_after_steps"], 8)
+        self.assertEqual(flags[8]["model_refresh_every"], 8)
+        self.assertTrue(any(r["heuristic_step"] for r in flags[9:16]))
+        self.assertTrue(not flags[16]["heuristic_step"])
+        self.assertLess(agent.model_calls, 16)
+
+    def test_directional_controls_keep_longer_model_planning(self):
+        agent, model = self.agent('{"action":1,"data":{}}')
+        flags = []
+        for turn in range(18):
+            frame = FakeFrameData(
+                frame=[[[turn % 5]]], available_actions=[1, 2]
+            )
+            chosen = agent.choose_action([], frame)
+            flags.append(dict(chosen.reasoning))
+        self.assertEqual(agent._belief.max_stagnation, 16)
+        self.assertEqual(flags[10]["novelty_after_steps"], 16)
+        self.assertFalse(flags[10]["heuristic_step"])
+        self.assertTrue(flags[17]["heuristic_step"])
+
+    def test_level_progress_rearms_model_first_for_coordinate_controls(self):
+        agent, model = self.agent('{"action":6,"data":{"x":0,"y":0}}')
+        for turn in range(12):
+            agent.choose_action([], FakeFrameData(
+                frame=[[[turn % 5]]], available_actions=[6]
+            ))
+        self.assertGreater(agent._explorer.heuristic_calls, 0)
+        previous_calls = agent.model_calls
+        action = agent.choose_action([], FakeFrameData(
+            frame=[[[3]]], available_actions=[6], levels_completed=1
+        ))
+        self.assertFalse(action.reasoning["heuristic_step"])
+        self.assertEqual(agent.model_calls, previous_calls + 1)
+        self.assertEqual(agent._belief.steps_without_progress, 0)
+
     def test_model_call_refresh_after_heuristic_blocks(self):
         agent,model=self.agent('{"action":1,"data":{},"reason":"move"}')
         calls=[]

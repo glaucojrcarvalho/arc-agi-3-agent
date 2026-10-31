@@ -25,6 +25,12 @@ from arc_agent.novelty_explorer import NoveltyExplorer
 
 class MyAgent(Agent):
     ACTION_COORDINATE_LIMIT = 64
+    # Early exploration for coordinate-only controls avoids repeated expensive
+    # LLM clicks; retain longer planning for directional/keyboard puzzles.
+    COMPLEX_NOVELTY_AFTER = 8
+    KEYBOARD_NOVELTY_AFTER = 16
+    COMPLEX_MODEL_REFRESH_EVERY = 8
+    KEYBOARD_MODEL_REFRESH_EVERY = 12
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
@@ -69,6 +75,9 @@ class MyAgent(Agent):
         recent_transitions = self._feedback.feedback()
         newly_observed = self._feedback.turns != self._last_processed_turn
         self._last_processed_turn = self._feedback.turns
+        self._belief.max_stagnation = (
+            self.COMPLEX_NOVELTY_AFTER if complex_ids else self.KEYBOARD_NOVELTY_AFTER
+        )
         self._belief.observe(
             level=level,
             state=state,
@@ -81,8 +90,12 @@ class MyAgent(Agent):
             salient_click_targets(settled_frame, max_targets=24) if complex_ids else []
         )
         model = self._get_model()
-        stuck = self._belief.steps_without_progress >= 16
-        heuristic_step = stuck and self._belief.steps_without_progress % 12 != 0
+        stuck = self._belief.steps_without_progress >= self._belief.max_stagnation
+        refresh_period = (
+            self.COMPLEX_MODEL_REFRESH_EVERY if complex_ids
+            else self.KEYBOARD_MODEL_REFRESH_EVERY
+        )
+        heuristic_step = stuck and self._belief.steps_without_progress % refresh_period != 0
         if heuristic_step:
             self._belief.abort_plan()
         plan_step = (
@@ -184,6 +197,8 @@ class MyAgent(Agent):
             "plan_actions_taken": self._belief.plan_actions_taken,
             "belief_revisions": self._belief.belief_revisions,
             "stagnation_events": self._belief.stagnation_events,
+            "novelty_after_steps": self._belief.max_stagnation,
+            "model_refresh_every": refresh_period,
             "steps_without_progress": self._belief.steps_without_progress,
             "validation_fallbacks": self.validation_fallbacks,
             "proven_noops": self._feedback.proven_noops,
