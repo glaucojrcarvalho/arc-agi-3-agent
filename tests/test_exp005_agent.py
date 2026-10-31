@@ -115,5 +115,53 @@ class Exp005AgentTests(unittest.TestCase):
         self.assertEqual(agent._explorer.progress_resets,1)
 
 
+    def test_animation_history_change_does_not_mask_true_settled_noop(self):
+        # Two different animations finish on the exact same board.
+        # Animation-only differences must not become fake state novelty.
+        agent, model = self.agent('{"action":1,"data":{},"reason":"probe"}')
+        initial = FakeFrameData(
+            frame=[[[1]], [[2]]], available_actions=[1, 2]
+        )
+        unchanged = FakeFrameData(
+            frame=[[[5]], [[6]], [[2]]], available_actions=[1, 2]
+        )
+        agent.choose_action([], initial)
+        agent.choose_action([], unchanged)
+        self.assertEqual(agent._feedback.proven_noops, 1)
+        prompt = json.loads(model.prompts[-1])
+        visual = prompt["visual_observation"]
+        self.assertEqual(visual["animation_frame_count"], 3)
+        self.assertEqual(
+            visual["encoding"], "lossless_animation_frame_dictionary"
+        )
+        self.assertTrue(prompt["recent_transitions"][-1]["proven_noop"])
+
+    def test_frame_bounds_use_settled_animation_frame(self):
+        agent, _ = self.agent('{"action":1,"data":{}}')
+        frame = FakeFrameData(
+            frame=[[[1, 2, 3, 4]], [[9, 9]]], available_actions=[1, 2]
+        )
+        self.assertEqual(agent._frame_bounds(frame), (2, 1))
+
+
+    def test_click_targets_ignore_transient_animation_frames(self):
+        agent, model = self.agent(
+            '{"action":6,"data":{"x":1,"y":1},"reason":"inspect"}'
+        )
+        initial = [
+            [0, 0, 0, 0], [0, 9, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0],
+        ]
+        settled = [
+            [0, 0, 0, 0], [0, 3, 0, 0], [0, 0, 0, 0], [0, 0, 0, 0],
+        ]
+        agent.choose_action(
+            [], FakeFrameData(frame=[initial, settled], available_actions=[6])
+        )
+        prompt = json.loads(model.prompts[-1])
+        colors = {item["color"] for item in prompt["candidate_click_pixels"]}
+        self.assertIn(3, colors)
+        self.assertNotIn(9, colors)
+
+
 if __name__ == "__main__":
     unittest.main()

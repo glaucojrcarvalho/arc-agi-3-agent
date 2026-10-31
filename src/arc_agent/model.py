@@ -131,6 +131,16 @@ def build_policy_prompt(
             "x is column 0..width-1, y is row 0..height-1; "
             "a hex character is an exact pixel color index, not a text character."
         )
+    elif frame_representation == "bounded_animation":
+        from .perception import bounded_animation_observation
+        payload["visual_observation"] = bounded_animation_observation(frame)
+        payload["animation_note"] = (
+            "The first dimension is an ordered animation sequence, not layers. "
+            "The settled board is the final frame. Frame dictionary and runs "
+            "encode an exact sequence; sampled keyframes omit intervening frames "
+            "and must not be treated as full evidence of dynamics. "
+            "Rows are exact pixel-color indices; x is column and y is row."
+        )
     else:
         raise ValueError("unsupported frame_representation")
     if click_candidates is not None:

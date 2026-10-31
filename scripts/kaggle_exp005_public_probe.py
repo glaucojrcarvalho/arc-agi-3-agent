@@ -128,7 +128,9 @@ def run_public_probe(standalone_source: str, environments_root: str):
             if next_raw is None:
                 raise RuntimeError(f"game returned null frame: {game}")
             after = _frame(next_raw)
-            delta = diff_frames(current.frame, after.frame)
+            # An ARC response may include many animation frames. Measure
+            # the settled board, not the number of intermediate renders.
+            delta = diff_frames(current.frame[-1:], after.frame[-1:])
             highest_level = max(highest_level, int(after.levels_completed or 0))
             trace.append({
                 "action_id": action.value,
@@ -136,6 +138,8 @@ def run_public_probe(standalone_source: str, environments_root: str):
                 "x": action_data.get("x"),
                 "y": action_data.get("y"),
                 "changed_cells": delta.changed_cells,
+                "settled_changed_cells": delta.changed_cells,
+                "animation_frame_count": len(after.frame),
                 "levels_completed": after.levels_completed,
                 "redirected": bool(reasoning.get("redirected")),
                 "spatial_candidates": int(reasoning.get("spatial_candidates", 0)),

@@ -134,3 +134,75 @@ def salient_click_targets(
                 if len(result) >= max_targets:
                     return result
     return result
+
+
+
+def bounded_animation_observation(
+    frame: Frame, *, max_unique_frames: int = 4, max_runs: int = 48,
+) -> dict[str, Any]:
+    """Bound model context for an ARC response containing animation frames.
+
+    The first dimension is an *animation sequence*, not image layers. Encode
+    its full ordered sequence losslessly when it uses few distinct frames and
+    transitions. Otherwise sample at most four keyframes, including the final
+    settled observation, and explicitly report omitted frames. Never infer
+    progress from animation alone.
+    """
+    if max_unique_frames < 2 or max_runs < 1:
+        raise ValueError("invalid animation representation limits")
+    if not frame:
+        return {
+            "encoding": "empty_animation", "animation_frame_count": 0,
+            "settled_frame_index": None, "frames": [],
+        }
+
+    palette: list[Any] = []
+    indices: dict[tuple[tuple[int, ...], ...], int] = {}
+    runs: list[dict[str, int]] = []
+    overflow = False
+    for layer in frame:
+        key = tuple(tuple(int(pixel) for pixel in row) for row in layer)
+        frame_id = indices.get(key)
+        if frame_id is None:
+            if len(palette) >= max_unique_frames:
+                overflow = True
+                break
+            frame_id = len(palette)
+            indices[key] = frame_id
+            palette.append(layer)
+        if runs and runs[-1]["frame_id"] == frame_id:
+            runs[-1]["count"] += 1
+        else:
+            runs.append({"frame_id": frame_id, "count": 1})
+            if len(runs) > max_runs:
+                overflow = True
+                break
+
+    if not overflow:
+        encoded = symbol_grid(palette)
+        return {
+            "encoding": "lossless_animation_frame_dictionary",
+            "grid_encoding": encoded["encoding"],
+            "animation_frame_count": len(frame),
+            "unique_frames": encoded["layers"],
+            "frame_runs": runs,
+            "settled_frame_id": runs[-1]["frame_id"],
+            "palette_counts": encoded["palette_counts"],
+        }
+
+    end = len(frame) - 1
+    selected = sorted(set((0, end // 3, (2 * end) // 3, end)))
+    encoded = symbol_grid([frame[index] for index in selected])
+    selected_frames = []
+    for frame_index, item in zip(selected, encoded["layers"]):
+        item["original_frame_index"] = frame_index
+        selected_frames.append(item)
+    return {
+        "encoding": "sampled_animation_keyframes",
+        "grid_encoding": encoded["encoding"],
+        "animation_frame_count": len(frame),
+        "sampled_frames": selected_frames,
+        "omitted_frame_count": len(frame) - len(selected),
+        "settled_frame_index": end,
+        "palette_counts": encoded["palette_counts"],
+    }
