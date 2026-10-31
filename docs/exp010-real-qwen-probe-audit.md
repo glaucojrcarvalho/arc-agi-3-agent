@@ -53,13 +53,20 @@ ablations.
 | EXP-009: every 8 (baseline) | **14** | 3,258 | 261.419 s |
 | Candidate every 12 | 7 | 2,895 | 253.696 s |
 | Candidate every 16 | 8 | 2,678 | 261.246 s |
+| Candidate: every 8 until >=32 stagnant moves, then every 16 | 13 | 3,013 | 256.182 s |
 
 The 12-step candidate had **1 improvement, 8 regressions, 141 ties**;
 the 16-step candidate had **0 improvements, 6 regressions, 144 ties**.
-Compared with EXP-009, no candidate improved net level completion
-(7 and 8 versus 14). Reduced fake-model calls are **not** a valid
-reason to sacrifice completed levels. These aggressive cadence variants
-were **rejected** and were **not pushed to Kaggle**.
+A third, less aggressive option preserved the EXP-009 eight-step Qwen
+refresh for the first 32 verified stagnant moves, then refreshed every
+16. It achieved 13 levels (vs 14), with **3 paired improvements,
+4 regressions and 143 ties**, despite 7.52% fewer fake calls.
+At the game level, one public game improved, two regressed, and 22 tied.
+That one-level net loss means it too was rejected. Compared with EXP-009,
+**none of the three candidates improved net completed levels**.
+Reduced fake-model calls are **not** a valid reason to sacrifice completed
+levels. All three variants were tested in isolation on the same public
+protocol and **none was pushed to Kaggle**.
 
 The EXP-010 audit PR intentionally **does not change the production
 agent's behavior**. Follow-up inference-allocation experiments need a
