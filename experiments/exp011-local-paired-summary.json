@@ -1,0 +1,182 @@
+{
+  "baseline_actions": 12000,
+  "baseline_fake_model_calls": 3251,
+  "baseline_sessions_with_levels": 9,
+  "baseline_sum_cpu_wallclock_seconds": 260.714,
+  "baseline_total_max_levels": 9,
+  "by_public_game": {
+    "ar25-0c556536": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "bp35-0a0ad940": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "cd82-fb555c5d": {
+      "improvements": 1,
+      "level_delta": 0,
+      "regressions": 1,
+      "sessions": 6
+    },
+    "cn04-2fe56bfb": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "dc22-fdcac232": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "ft09-0d8bbf25": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "g50t-5849a774": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "ka59-38d34dbb": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "lf52-271a04aa": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "lp85-305b61c3": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "ls20-9607627b": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "m0r0-492f87ba": {
+      "improvements": 1,
+      "level_delta": 1,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "r11l-495a7899": {
+      "improvements": 1,
+      "level_delta": -2,
+      "regressions": 3,
+      "sessions": 6
+    },
+    "re86-8af5384d": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "s5i5-18d95033": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "sb26-7fbdac44": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "sc25-635fd71a": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "sk48-d8078629": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "sp80-589a99af": {
+      "improvements": 1,
+      "level_delta": 1,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "su15-1944f8ab": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "tn36-ef4dde99": {
+      "improvements": 0,
+      "level_delta": -3,
+      "regressions": 3,
+      "sessions": 6
+    },
+    "tr87-cd924810": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "tu93-0768757b": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "vc33-5430563c": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    },
+    "wa30-ee6fef47": {
+      "improvements": 0,
+      "level_delta": 0,
+      "regressions": 0,
+      "sessions": 6
+    }
+  },
+  "candidate_actions": 12000,
+  "candidate_fake_model_calls": 3236,
+  "candidate_sessions_with_levels": 6,
+  "candidate_sum_cpu_wallclock_seconds": 256.665,
+  "candidate_total_max_levels": 6,
+  "fake_model_call_reduction_percent": 0.46,
+  "games": 25,
+  "games_with_net_improvement": 2,
+  "games_with_net_regression": 2,
+  "games_with_no_net_change": 21,
+  "protocol": "public-games/paired-controller-rng/fake-model/no-RHAE",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "session_improvements": 4,
+  "session_regressions": 7,
+  "session_ties": 139,
+  "sessions": 150
+}

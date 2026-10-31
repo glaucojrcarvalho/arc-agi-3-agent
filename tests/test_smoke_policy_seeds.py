@@ -16,6 +16,16 @@ class EvaluationPolicySeedTests(unittest.TestCase):
         self.assertNotEqual(policy_rng_seed("test-game", 1),
                             policy_rng_seed("other-game", 1))
 
+    def test_public_game_full_id_and_prefix_have_identical_rng(self):
+        for seed in range(6):
+            self.assertEqual(
+                policy_rng_seed("abcd", seed),
+                policy_rng_seed("abcd-0123abcd", seed),
+            )
+        self.assertNotEqual(
+            policy_rng_seed("abcd", 2), policy_rng_seed("abce", 2)
+        )
+
     def test_rejects_invalid_randomization_seeds(self):
         for value in (-1, True, 1.5, "1"):
             with self.subTest(value=value), self.assertRaises(ValueError):
