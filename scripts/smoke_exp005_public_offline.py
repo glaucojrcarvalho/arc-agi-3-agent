@@ -14,6 +14,7 @@ from arc_agi import Arcade, OperationMode
 from arcengine import GameAction
 
 from kaggle_exp005_public_probe import _action_reasoning, _frame, load_probe_agent
+from public_policy_rng import policy_rng_seed
 
 
 class FakeModel:
@@ -24,7 +25,8 @@ class FakeModel:
 
 
 def screen(*, agent_source: str, environments_dir: Path, games: list[str],
-           seeds: list[int], max_actions: int = 80) -> dict:
+           seeds: list[int], max_actions: int = 80,
+           vary_policy_seed: bool = False) -> dict:
     """Exercise legal actions, no-op feedback, and RESET without real inference."""
     if max_actions <= 0:
         raise ValueError("max_actions must be positive")
@@ -49,6 +51,11 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
             frame = _frame(raw)
             agent = agent_cls(game_id=game)
             agent._model = FakeModel()
+            if vary_policy_seed:
+                # Evaluation harness only: reseed the model-free exploration
+                # RNG with the requested controller seed. The production
+                # agent, game rules, and previous benchmarks are unchanged.
+                agent._explorer._rng.seed(policy_rng_seed(game, seed))
             resets = 0
             levels_max = int(frame.levels_completed or 0)
             actions = 0
@@ -76,6 +83,7 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
                 actions += 1
             item = {
                 "game": game, "seed": seed, "actions": actions,
+                "controller_seed_varied": vary_policy_seed,
                 "resets": resets, "max_levels": levels_max,
                 "final_levels": int(frame.levels_completed or 0),
                 "model_calls": agent.model_calls,
@@ -85,6 +93,7 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
             print(json.dumps(item, sort_keys=True), flush=True)
             results.append(item)
     summary = {
+        "controller_seed_varied": vary_policy_seed,
         "sessions": len(results),
         "actions": sum(item["actions"] for item in results),
         "resets": sum(item["resets"] for item in results),
@@ -107,12 +116,17 @@ def main() -> None:
     parser.add_argument("--games", nargs="+", default=["ls20", "vc33", "r11l", "tn36"])
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1])
     parser.add_argument("--max-actions", type=int, default=80)
+    parser.add_argument(
+        "--vary-policy-seed", action="store_true",
+        help="independently reseed the fake agent's novelty RNG per evaluation seed",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     output = screen(
         agent_source=args.agent.read_text(encoding="utf-8"),
         environments_dir=args.environments_dir, games=args.games,
         seeds=args.seeds, max_actions=args.max_actions,
+        vary_policy_seed=args.vary_policy_seed,
     )
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)
