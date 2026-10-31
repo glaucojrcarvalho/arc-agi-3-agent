@@ -98,6 +98,7 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
                     first_level_actions[level] for level in sorted(first_level_actions)
                 ],
                 "heuristic_actions": agent._explorer.heuristic_calls,
+                "redirected_actions": agent._feedback.redirects,
                 "wallclock_seconds": round(time.monotonic() - start, 3),
             }
             print(json.dumps(item, sort_keys=True), flush=True)
@@ -111,6 +112,7 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
         "total_max_levels": sum(item["max_levels"] for item in results),
         "model_calls": sum(item["model_calls"] for item in results),
         "heuristic_actions": sum(item["heuristic_actions"] for item in results),
+        "redirected_actions": sum(item["redirected_actions"] for item in results),
         "sum_wallclock_seconds": round(
             sum(item["wallclock_seconds"] for item in results), 3
         ),

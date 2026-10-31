@@ -1,0 +1,217 @@
+{
+  "baseline_summary": {
+    "actions": 6000,
+    "controller_seed_varied": true,
+    "heuristic_actions": 4356,
+    "model_calls": 1616,
+    "redirected_actions": 881,
+    "resets": 28,
+    "sessions": 75,
+    "sessions_with_levels": 6,
+    "sum_wallclock_seconds": 130.048,
+    "total_max_levels": 6
+  },
+  "candidate_summary": {
+    "actions": 6000,
+    "controller_seed_varied": true,
+    "heuristic_actions": 4359,
+    "model_calls": 1614,
+    "redirected_actions": 864,
+    "resets": 27,
+    "sessions": 75,
+    "sessions_with_levels": 6,
+    "sum_wallclock_seconds": 130.374,
+    "total_max_levels": 6
+  },
+  "experiment_date": "2026-11-01",
+  "paired_results": {
+    "baseline_actions": 6000,
+    "baseline_fake_model_calls": 1616,
+    "baseline_sessions_with_levels": 6,
+    "baseline_sum_cpu_wallclock_seconds": 130.048,
+    "baseline_total_max_levels": 6,
+    "by_public_game": {
+      "ar25": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "bp35": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "cd82": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "cn04": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "dc22": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "ft09": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "g50t": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "ka59": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "lf52": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "lp85": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "ls20": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "m0r0": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "r11l": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "re86": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "s5i5": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "sb26": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "sc25": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "sk48": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "sp80": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "su15": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "tn36": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "tr87": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "tu93": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "vc33": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      },
+      "wa30": {
+        "improvements": 0,
+        "level_delta": 0,
+        "regressions": 0,
+        "sessions": 3
+      }
+    },
+    "candidate_actions": 6000,
+    "candidate_fake_model_calls": 1614,
+    "candidate_sessions_with_levels": 6,
+    "candidate_sum_cpu_wallclock_seconds": 130.374,
+    "candidate_total_max_levels": 6,
+    "fake_model_call_reduction_percent": 0.12,
+    "first_level_action_efficiency": {
+      "baseline_sum_first_level_action_index": 229,
+      "candidate_faster": 0,
+      "candidate_slower": 0,
+      "candidate_sum_first_level_action_index": 229,
+      "paired_sessions_with_first_level": 6,
+      "same_action_count": 6
+    },
+    "games": 25,
+    "games_with_net_improvement": 0,
+    "games_with_net_regression": 0,
+    "games_with_no_net_change": 25,
+    "protocol": "public-games/paired-controller-rng/fake-model/no-RHAE",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "session_improvements": 0,
+    "session_regressions": 0,
+    "session_ties": 75,
+    "sessions": 75
+  },
+  "protocol": "25-official-public-games/3-randomized-controller-seeds/80-actions/deterministic-FAKE-model/not-RHAE",
+  "redirect_reduction_percent": 1.93,
+  "scope": "Public aggregate metrics only, no event-level action traces or frames"
+}
