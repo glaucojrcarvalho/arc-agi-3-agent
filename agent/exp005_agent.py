@@ -55,10 +55,14 @@ class MyAgent(Agent):
         complex_ids = set(self._complex_action_ids(action_ids))
         width, height = self._frame_bounds(latest_frame)
         frame = latest_frame.frame or []
+        # ARC frame[0..N] is an animation; only frame[-1] is the settled
+        # post-action board. Do not treat a changing animation length as
+        # a different game state or as level progress.
+        settled_frame = frame[-1:] if frame else []
         level = int(getattr(latest_frame, "levels_completed", 0) or 0)
         state = getattr(latest_frame.state, "name", str(latest_frame.state))
 
-        fingerprint = self._feedback.observe(frame=frame, level=level, state=state)
+        fingerprint = self._feedback.observe(frame=settled_frame, level=level, state=state)
         if self._feedback.progress_events != self._last_progress_events:
             self._last_progress_events = self._feedback.progress_events
             self._explorer.progress()
@@ -74,7 +78,7 @@ class MyAgent(Agent):
             ),
         )
         click_targets = (
-            salient_click_targets(frame, max_targets=24) if complex_ids else []
+            salient_click_targets(settled_frame, max_targets=24) if complex_ids else []
         )
         model = self._get_model()
         stuck = self._belief.steps_without_progress >= 16
@@ -112,7 +116,7 @@ class MyAgent(Agent):
                 height=height,
                 transition_feedback=recent_transitions,
                 blocked_actions=self._feedback.blocked(level=level, fingerprint=fingerprint),
-                frame_representation="symbol_grid",
+                frame_representation="bounded_animation",
                 click_candidates=click_targets if complex_ids else None,
                 recent_click_cooldowns=(
                     self._feedback.cooled_clicks(level) if complex_ids else None
@@ -157,7 +161,7 @@ class MyAgent(Agent):
         if redirected:
             self._belief.abort_plan()
         self._feedback.record(
-            frame=frame, level=level, state=state, action_id=action_id, data=data
+            frame=settled_frame, level=level, state=state, action_id=action_id, data=data
         )
         self._explorer.note_action(
             fingerprint=fingerprint, action_id=action_id, data=data
@@ -171,6 +175,7 @@ class MyAgent(Agent):
             "redirected": redirected,
             "reason": reason,
             "spatial_candidates": len(click_targets),
+            "animation_frame_count": len(frame),
             "recent_click_cooldown_count": len(self._feedback.cooled_clicks(level)),
             "model_calls": self.model_calls,
             "planned_action": planned_action,
@@ -213,8 +218,8 @@ class MyAgent(Agent):
 
     def _frame_bounds(self, latest_frame: FrameData) -> tuple[int, int]:
         frame = latest_frame.frame or []
-        if frame and frame[0] and frame[0][0]:
-            height = max(1, min(len(frame[0]), self.ACTION_COORDINATE_LIMIT))
-            width = max(1, min(len(frame[0][0]), self.ACTION_COORDINATE_LIMIT))
+        if frame and frame[-1] and frame[-1][0]:
+            height = max(1, min(len(frame[-1]), self.ACTION_COORDINATE_LIMIT))
+            width = max(1, min(len(frame[-1][0]), self.ACTION_COORDINATE_LIMIT))
             return width, height
         return self.ACTION_COORDINATE_LIMIT, self.ACTION_COORDINATE_LIMIT
