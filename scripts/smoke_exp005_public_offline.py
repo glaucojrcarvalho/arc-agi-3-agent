@@ -6,7 +6,6 @@ No GPU, hidden evaluation, competition submission, or Qwen inference.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import time
 from pathlib import Path
@@ -15,6 +14,7 @@ from arc_agi import Arcade, OperationMode
 from arcengine import GameAction
 
 from kaggle_exp005_public_probe import _action_reasoning, _frame, load_probe_agent
+from public_policy_rng import policy_rng_seed
 
 
 class FakeModel:
@@ -22,18 +22,6 @@ class FakeModel:
 
     def complete(self, prompt: str) -> str:
         return '{"action":1,"data":{},"reason":"transport smoke only"}'
-
-
-def _policy_rng_seed(game: str, evaluation_seed: int) -> int:
-    """Independent deterministic controller randomness for public A/B tests.
-
-    This seed never changes the competition agent or inserts a puzzle rule.
-    ARC offline environment seeds can leave the same starting board unchanged.
-    """
-    if not isinstance(evaluation_seed, int) or isinstance(evaluation_seed, bool) or evaluation_seed < 0:
-        raise ValueError("evaluation seed must be a nonnegative integer")
-    payload = f"public-policy-evaluation-v1:{game}:{evaluation_seed}"
-    return int.from_bytes(hashlib.sha256(payload.encode("utf-8")).digest()[:8], "big")
 
 
 def screen(*, agent_source: str, environments_dir: Path, games: list[str],
@@ -67,7 +55,7 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
                 # Evaluation harness only: reseed the model-free exploration
                 # RNG with the requested controller seed. The production
                 # agent, game rules, and previous benchmarks are unchanged.
-                agent._explorer._rng.seed(_policy_rng_seed(game, seed))
+                agent._explorer._rng.seed(policy_rng_seed(game, seed))
             resets = 0
             levels_max = int(frame.levels_completed or 0)
             actions = 0
