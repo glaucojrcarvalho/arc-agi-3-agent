@@ -35,6 +35,19 @@ def _rows(payload: dict[str, Any]) -> dict[tuple[str, int], dict[str, Any]]:
             for field in ("actions", "max_levels", "model_calls", "wallclock_seconds")
         ):
             raise ValueError(f"malformed metrics for {key}")
+        if "level_completion_action_indices" in item:
+            milestone_actions = item["level_completion_action_indices"]
+            if (
+                not isinstance(milestone_actions, list)
+                or len(milestone_actions) != item["max_levels"]
+                or any(
+                    isinstance(v, bool) or not isinstance(v, int)
+                    or not 1 <= v <= item["actions"]
+                    for v in milestone_actions
+                )
+                or milestone_actions != sorted(milestone_actions)
+            ):
+                raise ValueError(f"invalid action milestones for {key}")
         rows[key] = item
     if not rows:
         raise ValueError("empty evaluation")
@@ -75,6 +88,29 @@ def compare(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[str, An
     calls_new = int(sum_metric(after, "model_calls"))
     games_pos = sum(v["level_delta"] > 0 for v in per_game.values())
     games_neg = sum(v["level_delta"] < 0 for v in per_game.values())
+    # Action efficiency is not inferred from equal level counts. Only compare
+    # explicit, measured first-completion indices when both arms contain them.
+    all_rows = list(before.values()) + list(after.values())
+    with_milestones = sum("level_completion_action_indices" in row for row in all_rows)
+    if with_milestones and with_milestones != len(all_rows):
+        raise ValueError("cannot compare mixed milestone and legacy result files")
+    first_level_efficiency = None
+    if with_milestones:
+        first_level_pairs = [
+            (before[key]["level_completion_action_indices"][0],
+             after[key]["level_completion_action_indices"][0])
+            for key in before
+            if before[key]["level_completion_action_indices"]
+            and after[key]["level_completion_action_indices"]
+        ]
+        first_level_efficiency = {
+            "paired_sessions_with_first_level": len(first_level_pairs),
+            "candidate_faster": sum(new < old for old, new in first_level_pairs),
+            "candidate_slower": sum(new > old for old, new in first_level_pairs),
+            "same_action_count": sum(new == old for old, new in first_level_pairs),
+            "baseline_sum_first_level_action_index": sum(old for old, _ in first_level_pairs),
+            "candidate_sum_first_level_action_index": sum(new for _, new in first_level_pairs),
+        }
     result = {
         "protocol": "public-games/paired-controller-rng/fake-model/no-RHAE",
         "games": len(per_game),
@@ -101,6 +137,8 @@ def compare(baseline: dict[str, Any], candidate: dict[str, Any]) -> dict[str, An
         "candidate_sum_cpu_wallclock_seconds": round(sum_metric(after, "wallclock_seconds"), 3),
         "by_public_game": dict(sorted(per_game.items())),
     }
+    if first_level_efficiency is not None:
+        result["first_level_action_efficiency"] = first_level_efficiency
     return result
 
 

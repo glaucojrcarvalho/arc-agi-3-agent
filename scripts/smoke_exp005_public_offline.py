@@ -15,6 +15,7 @@ from arcengine import GameAction
 
 from kaggle_exp005_public_probe import _action_reasoning, _frame, load_probe_agent
 from public_policy_rng import policy_rng_seed
+from public_level_milestones import record_milestones
 
 
 class FakeModel:
@@ -58,6 +59,7 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
                 agent._explorer._rng.seed(policy_rng_seed(game, seed))
             resets = 0
             levels_max = int(frame.levels_completed or 0)
+            first_level_actions: dict[int, int] = {}
             actions = 0
             start = time.monotonic()
             for _ in range(max_actions):
@@ -79,14 +81,22 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
                         f"public game returned null frame: {game}/{seed}"
                     )
                 frame = _frame(raw)
-                levels_max = max(levels_max, int(frame.levels_completed or 0))
                 actions += 1
+                levels_max = record_milestones(
+                    first_level_actions, highest_level=levels_max,
+                    observed_level=int(frame.levels_completed or 0), action_index=actions,
+                )
             item = {
                 "game": game, "seed": seed, "actions": actions,
                 "controller_seed_varied": vary_policy_seed,
                 "resets": resets, "max_levels": levels_max,
                 "final_levels": int(frame.levels_completed or 0),
                 "model_calls": agent.model_calls,
+                # Earliest scored-action index for each ACTUAL level completion.
+                # This is public fake-model evidence, never an RHAE score.
+                "level_completion_action_indices": [
+                    first_level_actions[level] for level in sorted(first_level_actions)
+                ],
                 "heuristic_actions": agent._explorer.heuristic_calls,
                 "wallclock_seconds": round(time.monotonic() - start, 3),
             }

@@ -49,5 +49,35 @@ class PairedControllerComparisonTests(unittest.TestCase):
                     run([("a", 0, 0, 1)]))
 
 
+class PublicActionMilestoneComparisonTests(unittest.TestCase):
+    def test_detects_action_efficiency_with_equal_level_counts(self):
+        baseline = run([("a", 0, 1, 7), ("b", 0, 1, 7), ("c", 0, 0, 7)])
+        candidate = run([("a", 0, 1, 5), ("b", 0, 1, 5), ("c", 0, 0, 5)])
+        for row in baseline["games"]:
+            row["level_completion_action_indices"] = (
+                [20] if row["game"] == "a" else [30] if row["game"] == "b" else []
+            )
+        for row in candidate["games"]:
+            row["level_completion_action_indices"] = (
+                [16] if row["game"] == "a" else [35] if row["game"] == "b" else []
+            )
+        metric = compare(baseline, candidate)["first_level_action_efficiency"]
+        self.assertEqual(metric["paired_sessions_with_first_level"], 2)
+        self.assertEqual(metric["candidate_faster"], 1)
+        self.assertEqual(metric["candidate_slower"], 1)
+        self.assertEqual(metric["baseline_sum_first_level_action_index"], 50)
+        self.assertEqual(metric["candidate_sum_first_level_action_index"], 51)
+
+    def test_rejects_mismatched_or_invalid_milestones(self):
+        baseline = run([("a", 0, 1, 7)])
+        candidate = run([("a", 0, 1, 7)])
+        baseline["games"][0]["level_completion_action_indices"] = [5]
+        with self.assertRaisesRegex(ValueError, "mixed milestone"):
+            compare(baseline, candidate)
+        candidate["games"][0]["level_completion_action_indices"] = [0]
+        with self.assertRaisesRegex(ValueError, "invalid action milestones"):
+            compare(baseline, candidate)
+
+
 if __name__ == "__main__":
     unittest.main()

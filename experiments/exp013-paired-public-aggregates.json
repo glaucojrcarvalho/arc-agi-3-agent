@@ -1,0 +1,116 @@
+{
+  "cohort_25_games_3_seeds": {
+    "paired_n2": {
+      "baseline_actions": 6000,
+      "baseline_fake_model_calls": 1616,
+      "baseline_sessions_with_levels": 6,
+      "baseline_sum_cpu_wallclock_seconds": 129.5,
+      "baseline_total_max_levels": 6,
+      "candidate_actions": 6000,
+      "candidate_fake_model_calls": 1520,
+      "candidate_sessions_with_levels": 6,
+      "candidate_sum_cpu_wallclock_seconds": 128.657,
+      "candidate_total_max_levels": 6,
+      "fake_model_call_reduction_percent": 5.94,
+      "games": 25,
+      "games_with_net_improvement": 0,
+      "games_with_net_regression": 0,
+      "games_with_no_net_change": 25,
+      "protocol": "public-games/paired-controller-rng/fake-model/no-RHAE",
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "session_improvements": 0,
+      "session_regressions": 0,
+      "session_ties": 75,
+      "sessions": 75
+    },
+    "paired_n3": {
+      "baseline_actions": 6000,
+      "baseline_fake_model_calls": 1616,
+      "baseline_sessions_with_levels": 6,
+      "baseline_sum_cpu_wallclock_seconds": 129.5,
+      "baseline_total_max_levels": 6,
+      "candidate_actions": 6000,
+      "candidate_fake_model_calls": 1565,
+      "candidate_sessions_with_levels": 6,
+      "candidate_sum_cpu_wallclock_seconds": 129.05,
+      "candidate_total_max_levels": 6,
+      "fake_model_call_reduction_percent": 3.16,
+      "games": 25,
+      "games_with_net_improvement": 0,
+      "games_with_net_regression": 0,
+      "games_with_no_net_change": 25,
+      "protocol": "public-games/paired-controller-rng/fake-model/no-RHAE",
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "session_improvements": 0,
+      "session_regressions": 0,
+      "session_ties": 75,
+      "sessions": 75
+    },
+    "summary_by_arm": {
+      "baseline": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "heuristic_actions": 4356,
+        "model_calls": 1616,
+        "resets": 28,
+        "sessions": 75,
+        "sessions_with_levels": 6,
+        "sum_wallclock_seconds": 129.5,
+        "total_max_levels": 6
+      },
+      "n2": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "heuristic_actions": 4451,
+        "model_calls": 1520,
+        "resets": 29,
+        "sessions": 75,
+        "sessions_with_levels": 6,
+        "sum_wallclock_seconds": 128.657,
+        "total_max_levels": 6
+      },
+      "n3": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "heuristic_actions": 4407,
+        "model_calls": 1565,
+        "resets": 28,
+        "sessions": 75,
+        "sessions_with_levels": 6,
+        "sum_wallclock_seconds": 129.05,
+        "total_max_levels": 6
+      }
+    }
+  },
+  "date": "2026-10-31",
+  "decision": "reject candidate as score improvement; no official submission or new Kaggle GPU run",
+  "four_game_action_efficiency_audit": {
+    "baseline_levels": 5,
+    "candidate_n2_levels": 5,
+    "first_level_action_efficiency": {
+      "baseline_sum_first_level_action_index": 201,
+      "candidate_faster": 0,
+      "candidate_slower": 0,
+      "candidate_sum_first_level_action_index": 201,
+      "paired_sessions_with_first_level": 5,
+      "same_action_count": 5
+    },
+    "public_games": [
+      "ls20",
+      "vc33",
+      "r11l",
+      "tn36"
+    ],
+    "sessions": 12,
+    "total_actions_per_arm": 960
+  },
+  "protocol": "25 official public games; 3 independently seeded controllers; 80 actions/session; deterministic FAKE model; no GPU, private games, or Kaggle score"
+}
