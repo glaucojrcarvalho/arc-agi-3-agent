@@ -141,6 +141,68 @@ efficiency* and incomplete levels receive zero; completing a single
 level in 80 actions must not be translated into a Kaggle score.
 Reference: https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3/overview
 
+## Independent controller RNG audit — 25 public games × 6 trials
+
+The original nominal environment seeds 0..5 did not produce different
+initial observations in the 25 public games checked; the deterministic
+novelty explorer also seeded itself only by game ID. Re-running unchanged
+environment seeds therefore **does not establish six independent policy
+samples**. To test whether the policy advantage is sensitive to the
+controller's stochastic choices, the *evaluation harness only* now uses
+SHA-256 over the public game ID and evaluation seed to reseed the
+explorer before each session. Production agent code and real-Qwen
+notebooks are unchanged. These are controller-randomness trials on the
+same 25 public tasks, **not 150 different games**.
+
+Two standalone agents from independent EXP-008 and EXP-009 source trees
+were compared with the **same game/controller-seed pairs**: 25 public
+games × controller seeds 0..5 × up to 80 legal actions. The model was
+the same fixed deterministic **fake** response in both conditions.
+Exact source and JSON protocols are in
+[offline smoke](../scripts/smoke_exp005_public_offline.py),
+[controller RNG](../scripts/public_policy_rng.py), and
+[paired comparison](../scripts/compare_public_controller_seeds.py).
+Generated result JSON stays in untracked local temporary storage.
+
+| Public-only metric | EXP-008 | EXP-009 |
+|---|---:|---:|
+| Controller-randomized sessions | 150 | 150 |
+| Actions | 12,000 | 12,000 |
+| Sessions with >=1 completed level | 11 | **14** |
+| Sum of maximum verified level counts | 11 | **14** |
+| Fake-model calls | 4,055 | **3,258** |
+| Sum local wallclock (s) | 271.884 | 263.379 |
+
+**Paired outcomes:** EXP-009 improved 6 session pairs, regressed 3,
+and tied 141. At the **game level**, 3 of 25 public games had positive
+net differences (cd82, lp85, r11l), none had a negative net
+difference, and 22 were tied. Other games (sp80, tn36) had both
+gains and losses that canceled out. Net gain: 3 completed levels;
+the fake-call reduction was **19.65%** (797 fewer calls). The 8.505 s
+difference in local CPU-only wallclock is not a measured GPU speedup
+and is small relative to normal runtime variability.
+
+This strengthens the *model-free action-policy* signal, but the effect
+is narrow: only 9/150 pairs changed their level outcome. It does **not**
+establish an ARC-AGI-3 leaderboard/RHAE improvement, independent task
+generalization, or better real-Qwen reasoning; the model is fixed and
+fake, and the environment initial states do not vary across these
+seeds. A completed level at 80 actions may still score poorly under the
+action-efficiency metric. Favor real-model levels_completed, Qwen call
+count and wallclock over raw pixel changes.
+
+Reproduce the paired comparison after running both standalone versions
+of the public-only smoke command with flags
+--vary-policy-seed --seeds 0 1 2 3 4 5 and identical games/action budgets:
+
+    python scripts/compare_public_controller_seeds.py       --baseline /tmp/exp008-public-controller.json       --candidate /tmp/exp009-public-controller.json
+
+The CI suite contains 134 tests after isolating the evaluation seed
+helper from the ARC runtime, which is intentionally absent from the
+GitHub unit-test runner. **Real-model EXP-009 Kaggle kernel remains a
+separate validation gate**; do not promote this policy on fake-model
+data alone.
+
 ## Outstanding release gates
 
 - [x] Complete EXP-005 v4 public real-model probe and inspect checkpoint.
@@ -149,8 +211,9 @@ Reference: https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3/overview
 - [x] Complete same-seed 25-game × three-seed A/B (3 → 6 levels).
 - [x] Validate on additional *environment* seeds 3, 4, 5
   (same totals, **not independent stochastic tests**).
-- [ ] Evaluate independently varied controller RNG seeds and compare
-  EXP-008/009 under the same randomized-controller protocol.
+- [x] Compare EXP-008/009 on six independently randomized controller
+  RNG seeds; 11 to 14 public levels, 6 paired wins/3 losses, 19.65% fewer
+  fake-model calls (NOT a Qwen or RHAE score).
 - [x] Check all known Kaggle GPU notebooks: EXP-000..005 were COMPLETE
   before the private EXP-009 save-and-run was initiated.
 - [x] Initiate the private offline EXP-009 Kaggle notebook with
