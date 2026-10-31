@@ -6,6 +6,7 @@ No GPU, hidden evaluation, competition submission, or Qwen inference.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import time
 from pathlib import Path
@@ -23,8 +24,21 @@ class FakeModel:
         return '{"action":1,"data":{},"reason":"transport smoke only"}'
 
 
+def _policy_rng_seed(game: str, evaluation_seed: int) -> int:
+    """Independent deterministic controller randomness for public A/B tests.
+
+    This seed never changes the competition agent or inserts a puzzle rule.
+    ARC offline environment seeds can leave the same starting board unchanged.
+    """
+    if not isinstance(evaluation_seed, int) or isinstance(evaluation_seed, bool) or evaluation_seed < 0:
+        raise ValueError("evaluation seed must be a nonnegative integer")
+    payload = f"public-policy-evaluation-v1:{game}:{evaluation_seed}"
+    return int.from_bytes(hashlib.sha256(payload.encode("utf-8")).digest()[:8], "big")
+
+
 def screen(*, agent_source: str, environments_dir: Path, games: list[str],
-           seeds: list[int], max_actions: int = 80) -> dict:
+           seeds: list[int], max_actions: int = 80,
+           vary_policy_seed: bool = False) -> dict:
     """Exercise legal actions, no-op feedback, and RESET without real inference."""
     if max_actions <= 0:
         raise ValueError("max_actions must be positive")
@@ -49,6 +63,11 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
             frame = _frame(raw)
             agent = agent_cls(game_id=game)
             agent._model = FakeModel()
+            if vary_policy_seed:
+                # Evaluation harness only: reseed the model-free exploration
+                # RNG with the requested controller seed. The production
+                # agent, game rules, and previous benchmarks are unchanged.
+                agent._explorer._rng.seed(_policy_rng_seed(game, seed))
             resets = 0
             levels_max = int(frame.levels_completed or 0)
             actions = 0
@@ -76,6 +95,7 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
                 actions += 1
             item = {
                 "game": game, "seed": seed, "actions": actions,
+                "controller_seed_varied": vary_policy_seed,
                 "resets": resets, "max_levels": levels_max,
                 "final_levels": int(frame.levels_completed or 0),
                 "model_calls": agent.model_calls,
@@ -85,6 +105,7 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
             print(json.dumps(item, sort_keys=True), flush=True)
             results.append(item)
     summary = {
+        "controller_seed_varied": vary_policy_seed,
         "sessions": len(results),
         "actions": sum(item["actions"] for item in results),
         "resets": sum(item["resets"] for item in results),
@@ -107,12 +128,17 @@ def main() -> None:
     parser.add_argument("--games", nargs="+", default=["ls20", "vc33", "r11l", "tn36"])
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1])
     parser.add_argument("--max-actions", type=int, default=80)
+    parser.add_argument(
+        "--vary-policy-seed", action="store_true",
+        help="independently reseed the fake agent's novelty RNG per evaluation seed",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     output = screen(
         agent_source=args.agent.read_text(encoding="utf-8"),
         environments_dir=args.environments_dir, games=args.games,
         seeds=args.seeds, max_actions=args.max_actions,
+        vary_policy_seed=args.vary_policy_seed,
     )
     if args.output is not None:
         args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -117,13 +117,40 @@ games. The fake model is deliberately constant and cannot simulate
 Qwen's learned action selection. A holdout on seeds 3/4/5 and a
 real-Qwen Kaggle public probe are separate validation gates.
 
+## Evaluation seed audit (important limitation)
+
+The first two A/B cohorts used environment seeds `0..2` and `3..5`,
+but **environment seeds alone are not independent policy trials**.
+For all **25** official public environments checked, the serialized
+initial observation and action availability hashed identically under
+seeds `0..5`. The two complete fake-model A/B cohorts reproduced the
+same action/level/call totals exactly, confirming that in those traces,
+the agent's novelty RNG (seeded solely by game ID) followed the same
+actions. Calling these six observations independent would exaggerate
+the strength of the evidence.
+
+A new *evaluation-only* `--vary-policy-seed` option independently
+reseeds the fake agent's novelty RNG using a SHA-256 digest of the
+public game ID and controller evaluation seed. This changes no
+competition agent behavior, game rules, private data or model prompt.
+Report randomized-controller outcomes separately; level completion
+rather than changed pixels remains the only quality outcome.
+
+The public ARC-AGI-3 benchmark measures *relative human action
+efficiency* and incomplete levels receive zero; completing a single
+level in 80 actions must not be translated into a Kaggle score.
+Reference: https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3/overview
+
 ## Outstanding release gates
 
 - [x] Complete EXP-005 v4 public real-model probe and inspect checkpoint.
 - [x] Implement action-aware policy in an isolated EXP-009 branch.
 - [x] Unit/integration regression tests; syntax/metadata preflight.
 - [x] Complete same-seed 25-game × three-seed A/B (3 → 6 levels).
-- [ ] Validate on additional held-out public seeds 3, 4, 5.
+- [x] Validate on additional *environment* seeds 3, 4, 5
+  (same totals, **not independent stochastic tests**).
+- [ ] Evaluate independently varied controller RNG seeds and compare
+  EXP-008/009 under the same randomized-controller protocol.
 - [x] Check all known Kaggle GPU notebooks: EXP-000..005 were COMPLETE
   before the private EXP-009 save-and-run was initiated.
 - [x] Initiate the private offline EXP-009 Kaggle notebook with
