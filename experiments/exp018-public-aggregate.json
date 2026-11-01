@@ -1,0 +1,152 @@
+{
+  "actions_per_policy": 6000,
+  "comparisons": {
+    "early": {
+      "affected_public_games": {
+        "m0r0": 1,
+        "r11l": -1,
+        "tn36": -1
+      },
+      "games_with_net_improvement": 1,
+      "games_with_net_regression": 2,
+      "milestones": {
+        "baseline_completed_levels": 6,
+        "baseline_fake_model_calls": 1616,
+        "baseline_sum_cpu_wallclock_seconds": 130.724,
+        "candidate_completed_levels": 5,
+        "candidate_fake_model_calls": 1140,
+        "candidate_sum_cpu_wallclock_seconds": 127.192,
+        "controller_seeds": [
+          0,
+          1,
+          2
+        ],
+        "distinct_games": 25,
+        "matched_baseline_action_index_sum": 157,
+        "matched_candidate_action_index_sum": 122,
+        "matched_level_milestones": 4,
+        "milestones_earlier": 3,
+        "milestones_equal": 0,
+        "milestones_later": 1,
+        "paired_session_improvements": 1,
+        "paired_session_regressions": 2,
+        "paired_session_ties": 72,
+        "protocol": "public-games/paired-controller-seed/fake-model/authoritative-level-index"
+      }
+    },
+    "late": {
+      "affected_public_games": {
+        "m0r0": 1,
+        "r11l": -1,
+        "sp80": -1,
+        "tn36": -1
+      },
+      "games_with_net_improvement": 1,
+      "games_with_net_regression": 3,
+      "milestones": {
+        "baseline_completed_levels": 6,
+        "baseline_fake_model_calls": 1616,
+        "baseline_sum_cpu_wallclock_seconds": 130.724,
+        "candidate_completed_levels": 4,
+        "candidate_fake_model_calls": 2050,
+        "candidate_sum_cpu_wallclock_seconds": 129.144,
+        "controller_seeds": [
+          0,
+          1,
+          2
+        ],
+        "distinct_games": 25,
+        "matched_baseline_action_index_sum": 83,
+        "matched_candidate_action_index_sum": 100,
+        "matched_level_milestones": 2,
+        "milestones_earlier": 0,
+        "milestones_equal": 0,
+        "milestones_later": 2,
+        "paired_session_improvements": 2,
+        "paired_session_regressions": 4,
+        "paired_session_ties": 69,
+        "protocol": "public-games/paired-controller-seed/fake-model/authoritative-level-index"
+      }
+    }
+  },
+  "controller_seeds": [
+    0,
+    1,
+    2
+  ],
+  "date": "2026-11-01",
+  "decision": "reject both thresholds: lower total completed levels than EXP-009 baseline; no Kaggle GPU experiment or official submission",
+  "environment_count": 25,
+  "experiment": "EXP-018",
+  "important_limits": [
+    "deterministic FAKE model, not real Qwen inference",
+    "25 distinct public games; different controller seeds are repeats, not new games",
+    "first-completion action index is only compared when both finish the same number of levels",
+    "local summed wallclock is not GPU latency",
+    "no hidden evaluation, no Kaggle leaderboard score/RHAE claim"
+  ],
+  "metrics": {
+    "baseline": {
+      "source_sha256": "b7708cd1f0de0539e93f4263998b25c527dce74870b612d1e61e9854ff87ae43",
+      "summary": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "first_completion_action_sum": 229,
+        "heuristic_actions": 4356,
+        "model_calls": 1616,
+        "resets": 28,
+        "sessions": 75,
+        "sessions_with_levels": 6,
+        "sum_wallclock_seconds": 130.724,
+        "total_max_levels": 6
+      }
+    },
+    "early": {
+      "source_sha256": "8d76adf2e341ecfc7502ff7a56478ee08e249878a65186b5a3156b2f065c46cb",
+      "summary": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "first_completion_action_sum": 194,
+        "heuristic_actions": 4828,
+        "model_calls": 1140,
+        "resets": 32,
+        "sessions": 75,
+        "sessions_with_levels": 5,
+        "sum_wallclock_seconds": 127.192,
+        "total_max_levels": 5
+      }
+    },
+    "late": {
+      "source_sha256": "268c112b6b7c20dfc72cfc712695d950eeda1faf60d1aaaf7cb9dd318f33ee64",
+      "summary": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "first_completion_action_sum": 222,
+        "heuristic_actions": 3919,
+        "model_calls": 2050,
+        "resets": 31,
+        "sessions": 75,
+        "sessions_with_levels": 4,
+        "sum_wallclock_seconds": 129.144,
+        "total_max_levels": 4
+      }
+    }
+  },
+  "policies": {
+    "baseline": {
+      "complex_novelty_after": 8,
+      "keyboard_novelty_after": 16
+    },
+    "early": {
+      "complex_novelty_after": 4,
+      "keyboard_novelty_after": 8
+    },
+    "late": {
+      "complex_novelty_after": 12,
+      "keyboard_novelty_after": 24
+    }
+  },
+  "protocol": "25 public ARC-AGI-3 games x controller seeds [0,1,2] x up to 80 actions per session, deterministic fake model, offline",
+  "total_actions": 18000,
+  "upstream_exp009_commit": "d2a8a174870a04a673e7e3ce736246f942bcc151"
+}

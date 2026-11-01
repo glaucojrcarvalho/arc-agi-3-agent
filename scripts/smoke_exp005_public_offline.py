@@ -24,6 +24,21 @@ class FakeModel:
         return '{"action":1,"data":{},"reason":"transport smoke only"}'
 
 
+def record_level_milestones(
+    max_level_seen: int, observed_level: int, action_index: int,
+    milestones: list[int],
+) -> int:
+    """Append completion indices once; ignore level-counter resets or pixels."""
+    if not all(
+        isinstance(n, int) and not isinstance(n, bool) and n >= 0
+        for n in (max_level_seen, observed_level, action_index)
+    ):
+        raise ValueError("level counters and action index must be nonnegative integers")
+    if observed_level > max_level_seen:
+        milestones.extend([action_index] * (observed_level - max_level_seen))
+    return max(max_level_seen, observed_level)
+
+
 def screen(*, agent_source: str, environments_dir: Path, games: list[str],
            seeds: list[int], max_actions: int = 80,
            vary_policy_seed: bool = False) -> dict:
@@ -58,6 +73,8 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
                 agent._explorer._rng.seed(policy_rng_seed(game, seed))
             resets = 0
             levels_max = int(frame.levels_completed or 0)
+            # Only the environment level counter, not pixels, measures progress.
+            level_completion_actions: list[int] = []
             actions = 0
             start = time.monotonic()
             for _ in range(max_actions):
@@ -79,14 +96,18 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
                         f"public game returned null frame: {game}/{seed}"
                     )
                 frame = _frame(raw)
-                levels_max = max(levels_max, int(frame.levels_completed or 0))
                 actions += 1
+                levels_max = record_level_milestones(
+                    levels_max, int(frame.levels_completed or 0),
+                    actions, level_completion_actions,
+                )
             item = {
                 "game": game, "seed": seed, "actions": actions,
                 "controller_seed_varied": vary_policy_seed,
                 "resets": resets, "max_levels": levels_max,
                 "final_levels": int(frame.levels_completed or 0),
                 "model_calls": agent.model_calls,
+                "level_completion_actions": level_completion_actions,
                 "heuristic_actions": agent._explorer.heuristic_calls,
                 "wallclock_seconds": round(time.monotonic() - start, 3),
             }
@@ -100,6 +121,10 @@ def screen(*, agent_source: str, environments_dir: Path, games: list[str],
         "sessions_with_levels": sum(item["max_levels"] > 0 for item in results),
         "total_max_levels": sum(item["max_levels"] for item in results),
         "model_calls": sum(item["model_calls"] for item in results),
+        "first_completion_action_sum": sum(
+            item["level_completion_actions"][0]
+            for item in results if item["level_completion_actions"]
+        ),
         "heuristic_actions": sum(item["heuristic_actions"] for item in results),
         "sum_wallclock_seconds": round(
             sum(item["wallclock_seconds"] for item in results), 3
