@@ -1,0 +1,631 @@
+{
+  "base_commit": "d2a8a174870a04a673e7e3ce736246f942bcc151",
+  "first_completion_public_subset": {
+    "m55": {
+      "first_level_action_efficiency": {
+        "baseline_sum_first_level_action_index": 229,
+        "candidate_faster": 1,
+        "candidate_slower": 0,
+        "candidate_sum_first_level_action_index": 215,
+        "paired_sessions_with_first_level": 6,
+        "same_action_count": 5
+      }
+    },
+    "m80": {
+      "first_level_action_efficiency": {
+        "baseline_sum_first_level_action_index": 229,
+        "candidate_faster": 1,
+        "candidate_slower": 0,
+        "candidate_sum_first_level_action_index": 215,
+        "paired_sessions_with_first_level": 6,
+        "same_action_count": 5
+      }
+    }
+  },
+  "holdout_controller_seeds_3_to_5": {
+    "paired": {
+      "baseline_actions": 6000,
+      "baseline_fake_model_calls": 1642,
+      "baseline_sessions_with_levels": 8,
+      "baseline_sum_cpu_wallclock_seconds": 137.941,
+      "baseline_total_max_levels": 8,
+      "by_public_game": {
+        "ar25": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "bp35": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "cd82": {
+          "improvements": 0,
+          "level_delta": -2,
+          "regressions": 2,
+          "sessions": 3
+        },
+        "cn04": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "dc22": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "ft09": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "g50t": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "ka59": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "lf52": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "lp85": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "ls20": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "m0r0": {
+          "improvements": 1,
+          "level_delta": 1,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "r11l": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "re86": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "s5i5": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sb26": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sc25": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sk48": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sp80": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "su15": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "tn36": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "tr87": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "tu93": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "vc33": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "wa30": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        }
+      },
+      "candidate_actions": 6000,
+      "candidate_fake_model_calls": 1644,
+      "candidate_sessions_with_levels": 7,
+      "candidate_sum_cpu_wallclock_seconds": 139.79,
+      "candidate_total_max_levels": 7,
+      "fake_model_call_reduction_percent": -0.12,
+      "games": 25,
+      "games_with_net_improvement": 1,
+      "games_with_net_regression": 1,
+      "games_with_no_net_change": 23,
+      "protocol": "public-games/paired-controller-rng/fake-model/no-RHAE",
+      "seeds": [
+        3,
+        4,
+        5
+      ],
+      "session_improvements": 1,
+      "session_regressions": 2,
+      "session_ties": 72,
+      "sessions": 75
+    },
+    "summaries": {
+      "baseline": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "heuristic_actions": 4328,
+        "model_calls": 1642,
+        "resets": 30,
+        "sessions": 75,
+        "sessions_with_levels": 8,
+        "sum_wallclock_seconds": 137.941,
+        "total_max_levels": 8
+      },
+      "m80": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "heuristic_actions": 4325,
+        "model_calls": 1644,
+        "resets": 31,
+        "sessions": 75,
+        "sessions_with_levels": 7,
+        "sum_wallclock_seconds": 139.79,
+        "total_max_levels": 7
+      }
+    }
+  },
+  "paired_public_aggregates": {
+    "m55": {
+      "baseline_actions": 6000,
+      "baseline_fake_model_calls": 1616,
+      "baseline_sessions_with_levels": 6,
+      "baseline_sum_cpu_wallclock_seconds": 135.061,
+      "baseline_total_max_levels": 6,
+      "by_public_game": {
+        "ar25": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "bp35": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "cd82": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "cn04": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "dc22": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "ft09": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "g50t": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "ka59": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "lf52": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "lp85": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "ls20": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "m0r0": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "r11l": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "re86": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "s5i5": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sb26": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sc25": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sk48": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sp80": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "su15": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "tn36": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "tr87": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "tu93": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "vc33": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "wa30": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        }
+      },
+      "candidate_actions": 6000,
+      "candidate_fake_model_calls": 1613,
+      "candidate_sessions_with_levels": 6,
+      "candidate_sum_cpu_wallclock_seconds": 136.489,
+      "candidate_total_max_levels": 6,
+      "fake_model_call_reduction_percent": 0.19,
+      "games": 25,
+      "games_with_net_improvement": 0,
+      "games_with_net_regression": 0,
+      "games_with_no_net_change": 25,
+      "protocol": "public-games/paired-controller-rng/fake-model/no-RHAE",
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "session_improvements": 0,
+      "session_regressions": 0,
+      "session_ties": 75,
+      "sessions": 75
+    },
+    "m80": {
+      "baseline_actions": 6000,
+      "baseline_fake_model_calls": 1616,
+      "baseline_sessions_with_levels": 6,
+      "baseline_sum_cpu_wallclock_seconds": 135.061,
+      "baseline_total_max_levels": 6,
+      "by_public_game": {
+        "ar25": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "bp35": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "cd82": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "cn04": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "dc22": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "ft09": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "g50t": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "ka59": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "lf52": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "lp85": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "ls20": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "m0r0": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "r11l": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "re86": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "s5i5": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sb26": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sc25": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sk48": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "sp80": {
+          "improvements": 1,
+          "level_delta": 1,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "su15": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "tn36": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "tr87": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "tu93": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "vc33": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        },
+        "wa30": {
+          "improvements": 0,
+          "level_delta": 0,
+          "regressions": 0,
+          "sessions": 3
+        }
+      },
+      "candidate_actions": 6000,
+      "candidate_fake_model_calls": 1616,
+      "candidate_sessions_with_levels": 7,
+      "candidate_sum_cpu_wallclock_seconds": 135.028,
+      "candidate_total_max_levels": 7,
+      "fake_model_call_reduction_percent": 0.0,
+      "games": 25,
+      "games_with_net_improvement": 1,
+      "games_with_net_regression": 0,
+      "games_with_no_net_change": 24,
+      "protocol": "public-games/paired-controller-rng/fake-model/no-RHAE",
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "session_improvements": 1,
+      "session_regressions": 0,
+      "session_ties": 74,
+      "sessions": 75
+    }
+  },
+  "policy_names": {
+    "baseline": "EXP-009",
+    "m55": "EXP-015 p=.55",
+    "m80": "EXP-015 p=.80"
+  },
+  "protocol": "25 official public games x 3 independent controller RNG seeds x 80 actions x 3 policies; FAKE model, not RHAE",
+  "summaries": {
+    "baseline": {
+      "actions": 6000,
+      "controller_seed_varied": true,
+      "heuristic_actions": 4356,
+      "model_calls": 1616,
+      "resets": 28,
+      "sessions": 75,
+      "sessions_with_levels": 6,
+      "sum_wallclock_seconds": 135.061,
+      "total_max_levels": 6
+    },
+    "m55": {
+      "actions": 6000,
+      "controller_seed_varied": true,
+      "heuristic_actions": 4358,
+      "model_calls": 1613,
+      "resets": 29,
+      "sessions": 75,
+      "sessions_with_levels": 6,
+      "sum_wallclock_seconds": 136.489,
+      "total_max_levels": 6
+    },
+    "m80": {
+      "actions": 6000,
+      "controller_seed_varied": true,
+      "heuristic_actions": 4357,
+      "model_calls": 1616,
+      "resets": 27,
+      "sessions": 75,
+      "sessions_with_levels": 7,
+      "sum_wallclock_seconds": 135.028,
+      "total_max_levels": 7
+    }
+  }
+}
