@@ -19,7 +19,14 @@ PY312_DOCKER_IMAGE = "gcr.io/kaggle-private-byod/python@sha256:37c64f7dd9c54116e
 def build_artifacts(
     *, agent_source: str, username: str, kernel_slug: str,
     experiment_label: str = "EXP-005",
+    probe_controller_seed: int | None = None,
 ) -> tuple[dict, dict]:
+    if probe_controller_seed is not None and (
+        isinstance(probe_controller_seed, bool)
+        or not isinstance(probe_controller_seed, int)
+        or not 0 <= probe_controller_seed <= 2**31 - 1
+    ):
+        raise ValueError("public probe controller seed must be 0..2^31-1")
     if re.fullmatch(r"EXP-[0-9]{3}", experiment_label) is None:
         raise ValueError("experiment label must be EXP-NNN")
     notebook = base.build_notebook(agent_source)
@@ -58,7 +65,9 @@ def build_artifacts(
     probe_call = (
         "        _exp005_probe_source = " + repr(probe_source) + "\n"
         "        exec(compile(_exp005_probe_source, 'exp005_public_probe.py', 'exec'), globals(), globals())\n"
-        "        run_public_probe(" + repr(agent_source) + ", str(competition_root / 'environment_files'))\n"
+        "        run_public_probe(" + repr(agent_source)
+        + ", str(competition_root / 'environment_files'), controller_seed="
+        + repr(probe_controller_seed) + ")\n"
     )
     notebook["cells"][1]["source"] = setup_source.replace(
         marker, '        print("EXP-005 model validation inference succeeded")\n' + probe_call + '        server.terminate()'
@@ -81,6 +90,7 @@ def main() -> int:
     parser.add_argument("--username", required=True)
     parser.add_argument("--kernel-slug", default=DEFAULT_SLUG)
     parser.add_argument("--experiment-label", default="EXP-005")
+    parser.add_argument("--probe-controller-seed", type=int, default=None)
     parser.add_argument("--agent", type=Path, default=DEFAULT_AGENT)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     args = parser.parse_args()
@@ -91,6 +101,7 @@ def main() -> int:
         username=args.username,
         kernel_slug=args.kernel_slug,
         experiment_label=args.experiment_label,
+        probe_controller_seed=args.probe_controller_seed,
     )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "submission.ipynb").write_text(

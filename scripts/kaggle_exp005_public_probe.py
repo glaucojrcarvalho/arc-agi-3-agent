@@ -1,6 +1,7 @@
 """Bounded real-Qwen smoke on two PUBLIC ARC games, used only in save-and-run."""
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import time
@@ -9,6 +10,41 @@ from pathlib import Path
 
 from arc_agi import Arcade, OperationMode
 from arcengine import FrameData, GameAction
+
+
+def _public_controller_seed(game: str, evaluation_seed: int) -> int:
+    """Use the same game/seed derivation as the independent CPU evaluator."""
+    if not isinstance(game, str) or not game:
+        raise ValueError("game must be a nonempty string")
+    if (not isinstance(evaluation_seed, int) or isinstance(evaluation_seed, bool)
+            or evaluation_seed < 0):
+        raise ValueError("evaluation seed must be a nonnegative integer")
+    payload = f"public-policy-evaluation-v1:{game}:{evaluation_seed}"
+    return int.from_bytes(hashlib.sha256(payload.encode("utf-8")).digest()[:8], "big")
+
+
+def _seed_public_explorer(agent, game: str, evaluation_seed: int | None) -> None:
+    """Probe-only RNG override; the competition agent stays unchanged."""
+    if evaluation_seed is None:
+        return
+    # Fail closed if a future agent refactor removes its expected explorer.
+    explorer = getattr(agent, "_explorer", None)
+    rng = getattr(explorer, "_rng", None)
+    if rng is None or not callable(getattr(rng, "seed", None)):
+        raise RuntimeError("public probe expected an explorer with a seedable RNG")
+    rng.seed(_public_controller_seed(game, evaluation_seed))
+
+
+def _completion_events(previous_max: int, observed: int, action_number: int) -> list[dict]:
+    """Record authoritative level completions, never changes in pixels."""
+    if (any(isinstance(v, bool) or not isinstance(v, int) for v in
+            (previous_max, observed, action_number))
+            or previous_max < 0 or observed < 0 or action_number < 1):
+        raise ValueError("invalid level-completion observation")
+    return [
+        {"level": level, "after_action": action_number}
+        for level in range(previous_max + 1, observed + 1)
+    ]
 
 
 def _frame(raw):
@@ -68,7 +104,9 @@ def _action_reasoning(action) -> dict:
 
 
 def _save_public_probe(results: list[dict], *, complete: bool,
-                       path: str = "/kaggle/working/exp005-public-probe.json") -> None:
+                       path: str = "/kaggle/working/exp005-public-probe.json",
+                       controller_seed: int | None = None,
+                       environment_seed: int = 0) -> None:
     """Write a recoverable result after each public game, not just the last.
 
     If a later public game fails, earlier complete traces remain available
@@ -79,14 +117,25 @@ def _save_public_probe(results: list[dict], *, complete: bool,
             "model": "Qwen3.8-27B FP8",
             "probe_complete": complete,
             "completed_games": len(results),
+            "probe_protocol": {
+                "controller_seed": controller_seed,
+                "environment_seed": environment_seed,
+                "verified_progress": "levels_completed",
+                "official_submission": False,
+            },
             "results": results,
         }, indent=2),
         encoding="utf-8",
     )
 
 
-def run_public_probe(standalone_source: str, environments_root: str):
+def run_public_probe(standalone_source: str, environments_root: str, *,
+                     controller_seed: int | None = None, max_actions: int = 80):
     """Record observable game behavior; no claims about hidden-game score."""
+    if not 1 <= max_actions <= 80:
+        raise ValueError("public probe action cap must be 1..80")
+    if controller_seed is not None:
+        _public_controller_seed("seed-validation", controller_seed)
     root = Path(environments_root)
     if not root.is_dir():
         raise RuntimeError(f"public environment input not mounted: {root}")
@@ -108,12 +157,14 @@ def run_public_probe(standalone_source: str, environments_root: str):
             raise RuntimeError(f"public game reset failed: {game}")
         current = _frame(raw)
         agent = agent_cls(game_id=game)
+        _seed_public_explorer(agent, game, controller_seed)
         actions = []
         trace = []
         resets = 0
         highest_level = int(current.levels_completed or 0)
+        completion_actions: list[dict] = []
         game_started = time.monotonic()
-        for _ in range(80):
+        for _ in range(max_actions):
             if agent.is_done([], current):
                 break
             action = agent.choose_action([], current)
@@ -131,7 +182,11 @@ def run_public_probe(standalone_source: str, environments_root: str):
             # An ARC response may include many animation frames. Measure
             # the settled board, not the number of intermediate renders.
             delta = diff_frames(current.frame[-1:], after.frame[-1:])
-            highest_level = max(highest_level, int(after.levels_completed or 0))
+            after_level = int(after.levels_completed or 0)
+            completion_actions.extend(
+                _completion_events(highest_level, after_level, len(actions))
+            )
+            highest_level = max(highest_level, after_level)
             trace.append({
                 "action_id": action.value,
                 "is_reset": action is GameAction.RESET,
@@ -160,6 +215,9 @@ def run_public_probe(standalone_source: str, environments_root: str):
             "distinct_actions": len(set(actions)),
             "levels_completed": current.levels_completed,
             "max_levels_completed": highest_level,
+            "level_completion_actions": completion_actions,
+            "controller_seed": controller_seed,
+            "environment_seed": 0,
             "resets": resets,
             "state": current.state.name,
             "noops": agent._feedback.proven_noops,
@@ -178,5 +236,8 @@ def run_public_probe(standalone_source: str, environments_root: str):
             flush=True,
         )
         results.append(row)
-        _save_public_probe(results, complete=len(results) == len(games))
+        _save_public_probe(
+            results, complete=len(results) == len(games),
+            controller_seed=controller_seed, environment_seed=0,
+        )
     return results
