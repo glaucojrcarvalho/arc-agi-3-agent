@@ -1,0 +1,102 @@
+{
+  "base_commit": "d2a8a174870a04a673e7e3ce736246f942bcc151",
+  "date_utc": "2026-11-01",
+  "decision": "Reject both variants for submission: both completed fewer public levels than EXP-009 baseline in paired randomized-controller trials.",
+  "experiment": "EXP-017",
+  "hypothesis": "When exact settled frame hashes rarely repeat, globally or window-balanced model-free action choices may improve level coverage.",
+  "kaggle_gpu_run_started": false,
+  "method": "25 official public games, three independent evaluation-controller seeds 0-2, 80 actions per game/seed/policy; matched fake-model transport; no Kaggle score",
+  "official_submission": false,
+  "pairwise": {
+    "level": {
+      "baseline_actions": 6000,
+      "baseline_fake_model_calls": 1620,
+      "baseline_sum_cpu_wallclock_seconds": 131.056,
+      "baseline_total_max_levels": 6,
+      "candidate_actions": 6000,
+      "candidate_fake_model_calls": 1620,
+      "candidate_sum_cpu_wallclock_seconds": 130.426,
+      "candidate_total_max_levels": 5,
+      "games": 25,
+      "games_with_net_improvement": 0,
+      "games_with_net_regression": 1,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "session_improvements": 1,
+      "session_regressions": 2,
+      "session_ties": 72,
+      "sessions": 75
+    },
+    "window12": {
+      "baseline_actions": 6000,
+      "baseline_fake_model_calls": 1620,
+      "baseline_sum_cpu_wallclock_seconds": 131.056,
+      "baseline_total_max_levels": 6,
+      "candidate_actions": 6000,
+      "candidate_fake_model_calls": 1608,
+      "candidate_sum_cpu_wallclock_seconds": 132.043,
+      "candidate_total_max_levels": 4,
+      "games": 25,
+      "games_with_net_improvement": 0,
+      "games_with_net_regression": 2,
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "session_improvements": 0,
+      "session_regressions": 2,
+      "session_ties": 73,
+      "sessions": 75
+    }
+  },
+  "policies": {
+    "baseline": {
+      "source_sha256": "b7708cd1f0de0539e93f4263998b25c527dce74870b612d1e61e9854ff87ae43",
+      "summary": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "heuristic_actions": 4352,
+        "model_calls": 1620,
+        "resets": 28,
+        "sessions": 75,
+        "sessions_with_levels": 6,
+        "sum_wallclock_seconds": 131.056,
+        "total_max_levels": 6
+      }
+    },
+    "level": {
+      "source_sha256": "e0515047603c61a9875b514a20e60997906dd70925189a7249f217ac15dd1948",
+      "summary": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "heuristic_actions": 4350,
+        "model_calls": 1620,
+        "resets": 30,
+        "sessions": 75,
+        "sessions_with_levels": 5,
+        "sum_wallclock_seconds": 130.426,
+        "total_max_levels": 5
+      }
+    },
+    "window12": {
+      "source_sha256": "52c7eb4b9e4284479dde7ac25b7b1d300c4ff0f779ab021050423492292a791e",
+      "summary": {
+        "actions": 6000,
+        "controller_seed_varied": true,
+        "heuristic_actions": 4362,
+        "model_calls": 1608,
+        "resets": 30,
+        "sessions": 75,
+        "sessions_with_levels": 4,
+        "sum_wallclock_seconds": 132.043,
+        "total_max_levels": 4
+      }
+    }
+  },
+  "qwen_probes_re_run": false,
+  "real_qwen_tested": false
+}
