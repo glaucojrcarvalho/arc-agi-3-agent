@@ -1,0 +1,126 @@
+{
+  "base_commit": "d2a8a174870a04a673e7e3ce736246f942bcc151",
+  "date_utc": "2026-11-01",
+  "decision": "Reject 2x2 and 4x4 occupancy-only abstraction for submission: preselected 4x4 candidate regresses by three completed levels in independent controller-seed holdout.",
+  "diagnostic": {
+    "description": "Sum of within-game unique keys in five baseline fake-model 80-action replays; not level progress or cross-game independence.",
+    "five_public_games_actions": 400,
+    "sum_unique_coarse_b2_keys": 15,
+    "sum_unique_coarse_b4_keys": 33,
+    "sum_unique_exact_state_keys": 359
+  },
+  "experiment": "EXP-016",
+  "holdout": {
+    "b4": {
+      "actions": 6000,
+      "heuristic_actions": 4358,
+      "model_calls": 1611,
+      "resets": 31,
+      "sessions": 75,
+      "sessions_with_levels": 5,
+      "sum_wallclock_seconds": 135.479,
+      "total_max_levels": 5
+    },
+    "baseline": {
+      "actions": 6000,
+      "heuristic_actions": 4328,
+      "model_calls": 1642,
+      "resets": 30,
+      "sessions": 75,
+      "sessions_with_levels": 8,
+      "sum_wallclock_seconds": 129.416,
+      "total_max_levels": 8
+    }
+  },
+  "holdout_paired": {
+    "changed_public_games": {
+      "cd82": -2,
+      "sp80": -1
+    },
+    "games_with_net_improvement": 0,
+    "games_with_net_regression": 2,
+    "improvements": 0,
+    "regressions": 3,
+    "ties": 72
+  },
+  "protocol": "25 official public ARC-AGI-3 games, offline deterministic FAKE-model transport; randomized controller RNG only; at most 80 actions/session; not Qwen, RHAE or leaderboard score",
+  "real_qwen_tested": false,
+  "screening": {
+    "b2": {
+      "actions": 6000,
+      "heuristic_actions": 4358,
+      "model_calls": 1614,
+      "resets": 28,
+      "sessions": 75,
+      "sessions_with_levels": 7,
+      "sum_wallclock_seconds": 136.494,
+      "total_max_levels": 7
+    },
+    "b4": {
+      "actions": 6000,
+      "heuristic_actions": 4350,
+      "model_calls": 1622,
+      "resets": 28,
+      "sessions": 75,
+      "sessions_with_levels": 8,
+      "sum_wallclock_seconds": 135.686,
+      "total_max_levels": 8
+    },
+    "baseline": {
+      "actions": 6000,
+      "heuristic_actions": 4356,
+      "model_calls": 1616,
+      "resets": 28,
+      "sessions": 75,
+      "sessions_with_levels": 6,
+      "sum_wallclock_seconds": 129.802,
+      "total_max_levels": 6
+    }
+  },
+  "screening_paired": {
+    "b2": {
+      "changed_public_games": {
+        "sp80": 1
+      },
+      "games_with_net_improvement": 1,
+      "games_with_net_regression": 0,
+      "improvements": 1,
+      "regressions": 0,
+      "ties": 74
+    },
+    "b4": {
+      "changed_public_games": {
+        "sp80": 2
+      },
+      "games_with_net_improvement": 1,
+      "games_with_net_regression": 0,
+      "improvements": 2,
+      "regressions": 0,
+      "ties": 73
+    }
+  },
+  "settings": {
+    "bins_tested": [
+      2,
+      4
+    ],
+    "coarse_state_key": "quantized global palette + spatial foreground density",
+    "holdout_seeds": [
+      3,
+      4,
+      5
+    ],
+    "quantum": 8,
+    "screening_seeds": [
+      0,
+      1,
+      2
+    ]
+  },
+  "standalone_sha256": {
+    "b2": "faa4efe3fa122b68a3027057cbc11339ca37c57e574b814e2b17f96f6b53e037",
+    "b4": "f7eadc45cdf8627699bf73c2333ebe90ba9c5cbf7e6f11d16c5c4088da37b7b0",
+    "baseline": "833a32645eb3545ddb84a63db0d452842bab46e0c4e58f9dd4f73b11cad27d46"
+  },
+  "submitted_to_official_competition": false
+}
