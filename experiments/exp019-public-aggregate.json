@@ -1,0 +1,26 @@
+{
+  "agent_change": "bounded_per_level_attempt_ledger_in_model_prompt_only",
+  "assessment": "zero_action_policy_difference_when_the_fake_model_ignores_prompt",
+  "baseline_actions": 6000,
+  "baseline_fake_model_calls": 1616,
+  "baseline_sum_cpu_wallclock_seconds": 129.35,
+  "baseline_total_max_levels": 6,
+  "candidate_actions": 6000,
+  "candidate_fake_model_calls": 1616,
+  "candidate_sum_cpu_wallclock_seconds": 129.53,
+  "candidate_total_max_levels": 6,
+  "games": 25,
+  "gpu_score_verified": false,
+  "model": "deterministic_fake_model_not_qwen",
+  "protocol": "public-games/paired-controller-rng/fake-model/no-RHAE",
+  "public_games_not_independent_trials": 25,
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "session_improvements": 0,
+  "session_regressions": 0,
+  "session_ties": 75,
+  "sessions": 75
+}

@@ -57,6 +57,29 @@ class Exp005AgentTests(unittest.TestCase):
         self.assertEqual(memory["unverified_goal_hypothesis"],"reach the exit")
         self.assertEqual(memory["unverified_dynamics_hypothesis"],"1 moves right")
 
+    def test_prompt_reports_action_attempts_without_claiming_progress(self):
+        agent, model = self.agent('{"action":1,"data":{},"reason":"test"}')
+        f0 = FakeFrameData(frame=[[[1]]], available_actions=[1, 2],
+                           levels_completed=0)
+        f1 = FakeFrameData(frame=[[[2]]], available_actions=[1, 2],
+                           levels_completed=0)
+        f2 = FakeFrameData(frame=[[[3]]], available_actions=[1, 2],
+                           levels_completed=1)
+        agent.choose_action([], f0)
+        agent.choose_action([], f1)
+        context = json.loads(model.prompts[-1])["agent_belief_state"]
+        evidence = context["action_attempt_evidence"]
+        self.assertEqual(evidence["attempts_this_level"], 1)
+        self.assertEqual(evidence["control_attempts"], [
+            {"action": 1, "attempts": 1}
+        ])
+        self.assertIn("NOT success or failure", evidence["evidence_caveat"])
+        agent.choose_action([], f2)
+        after_level = json.loads(model.prompts[-1])["agent_belief_state"]
+        self.assertEqual(
+            after_level["action_attempt_evidence"]["attempts_this_level"], 0
+        )
+
     def test_keyboard_plan_saves_a_model_call(self):
         agent,model=self.agent(json.dumps({
             "action":1,"data":{},"reason":"move",

@@ -21,6 +21,7 @@ from arc_agent.perception import salient_click_targets
 from arc_agent.transition_policy import TransitionPolicy
 from arc_agent.reasoning_memory import ReasoningMemory
 from arc_agent.novelty_explorer import NoveltyExplorer
+from arc_agent.action_evidence import ActionEvidence
 
 
 class MyAgent(Agent):
@@ -40,6 +41,7 @@ class MyAgent(Agent):
         self._last_processed_turn = 0
         self._last_progress_events = 0
         self._explorer = NoveltyExplorer(self.game_id)
+        self._action_evidence = ActionEvidence()
         self.model_calls = 0
         self.validation_fallbacks = 0
 
@@ -52,6 +54,7 @@ class MyAgent(Agent):
         if latest_frame.state in (GameState.NOT_PLAYED, GameState.GAME_OVER):
             self._feedback.on_reset()
             self._belief.on_reset()
+            self._action_evidence.reset()
             self._last_processed_turn = self._feedback.turns
             return GameAction.RESET
 
@@ -66,6 +69,7 @@ class MyAgent(Agent):
         # a different game state or as level progress.
         settled_frame = frame[-1:] if frame else []
         level = int(getattr(latest_frame, "levels_completed", 0) or 0)
+        self._action_evidence.observe_level(level)
         state = getattr(latest_frame.state, "name", str(latest_frame.state))
 
         fingerprint = self._feedback.observe(frame=settled_frame, level=level, state=state)
@@ -134,7 +138,10 @@ class MyAgent(Agent):
                 recent_click_cooldowns=(
                     self._feedback.cooled_clicks(level) if complex_ids else None
                 ),
-                reasoning_context=self._belief.prompt_context(),
+                reasoning_context={
+                    **self._belief.prompt_context(),
+                    "action_attempt_evidence": self._action_evidence.prompt_context(),
+                },
             )
 
             self.model_calls += 1
@@ -178,6 +185,9 @@ class MyAgent(Agent):
         )
         self._explorer.note_action(
             fingerprint=fingerprint, action_id=action_id, data=data
+        )
+        self._action_evidence.record(
+            action_id, data, width=width, height=height
         )
         action = GameAction.from_id(action_id)
         if action.is_complex():
