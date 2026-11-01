@@ -8,7 +8,7 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parents[1] / "scripts"
 sys.path.insert(0, str(SCRIPTS))
 from build_exp018_variant import build_variant  # noqa: E402
-from smoke_exp005_public_offline import record_level_milestones  # noqa: E402
+from public_level_milestones import record_level_milestones  # noqa: E402
 
 
 class Exp018BuilderTests(unittest.TestCase):

@@ -15,6 +15,7 @@ from arcengine import GameAction
 
 from kaggle_exp005_public_probe import _action_reasoning, _frame, load_probe_agent
 from public_policy_rng import policy_rng_seed
+from public_level_milestones import record_level_milestones
 
 
 class FakeModel:
@@ -22,21 +23,6 @@ class FakeModel:
 
     def complete(self, prompt: str) -> str:
         return '{"action":1,"data":{},"reason":"transport smoke only"}'
-
-
-def record_level_milestones(
-    max_level_seen: int, observed_level: int, action_index: int,
-    milestones: list[int],
-) -> int:
-    """Append completion indices once; ignore level-counter resets or pixels."""
-    if not all(
-        isinstance(n, int) and not isinstance(n, bool) and n >= 0
-        for n in (max_level_seen, observed_level, action_index)
-    ):
-        raise ValueError("level counters and action index must be nonnegative integers")
-    if observed_level > max_level_seen:
-        milestones.extend([action_index] * (observed_level - max_level_seen))
-    return max(max_level_seen, observed_level)
 
 
 def screen(*, agent_source: str, environments_dir: Path, games: list[str],
