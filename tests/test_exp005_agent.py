@@ -162,6 +162,30 @@ class Exp005AgentTests(unittest.TestCase):
         self.assertEqual(agent.model_calls, previous_calls + 1)
         self.assertEqual(agent._belief.steps_without_progress, 0)
 
+    def test_refreshed_plan_runs_during_stagnant_novelty_cadence(self):
+        # A model refresh at turn 24 queues a legal keyboard plan.  The
+        # next turn should follow it instead of discarding it for novelty.
+        agent, model = self.agent(json.dumps({
+            "action": 1, "data": {}, "reason": "test",
+            "next_actions": [{"action": 2, "data": {}}]
+        }))
+        for turn in range(25):
+            agent.choose_action([], FakeFrameData(
+                frame=[[[turn % 5]]], available_actions=[1, 2]
+            ))
+        queued = agent._belief.prompt_context()[
+            "remaining_planned_keyboard_actions"
+        ]
+        self.assertEqual(queued, [{"action": 2, "data": {}}])
+        before_calls = agent.model_calls
+        action = agent.choose_action([], FakeFrameData(
+            frame=[[[0]]], available_actions=[1, 2]
+        ))
+        self.assertIs(action, FakeGameAction.ACTION2)
+        self.assertTrue(action.reasoning["planned_action"])
+        self.assertFalse(action.reasoning["heuristic_step"])
+        self.assertEqual(agent.model_calls, before_calls)
+
     def test_model_call_refresh_after_heuristic_blocks(self):
         agent,model=self.agent('{"action":1,"data":{},"reason":"move"}')
         calls=[]
