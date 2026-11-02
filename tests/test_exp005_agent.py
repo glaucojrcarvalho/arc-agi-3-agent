@@ -80,6 +80,29 @@ class Exp005AgentTests(unittest.TestCase):
             after_level["action_attempt_evidence"]["attempts_this_level"], 0
         )
 
+    def test_observed_completed_level_memory_in_prompt_and_game_reset(self):
+        agent, model = self.agent('{"action":1,"data":{}}')
+        agent.choose_action([], FakeFrameData(
+            frame=[[[1]]], available_actions=[1,2], levels_completed=0))
+        agent.choose_action([], FakeFrameData(
+            frame=[[[2]]], available_actions=[1,2], levels_completed=0))
+        agent.choose_action([], FakeFrameData(
+            frame=[[[3]]], available_actions=[1,2], levels_completed=1))
+        context=json.loads(model.prompts[-1])["agent_belief_state"]
+        events=context["observed_previous_level_progress"]["completed_level_traces"]
+        self.assertEqual(len(events), 1)
+        self.assertEqual((events[0]["from_level"],events[0]["to_level"]),(0,1))
+        self.assertIn("do not prove", context[
+            "observed_previous_level_progress"]["causality_warning"])
+        self.assertEqual(agent._observed_progress.progress_observations, 1)
+        reset_action = agent.choose_action([], FakeFrameData(
+            state=FakeGameState.GAME_OVER, available_actions=[1, 2],
+        ))
+        self.assertIs(reset_action, FakeGameAction.RESET)
+        self.assertEqual(
+            agent._observed_progress.prompt_context()["completed_level_traces"], [])
+        self.assertEqual(agent._observed_progress.progress_observations, 0)
+
     def test_keyboard_plan_saves_a_model_call(self):
         agent,model=self.agent(json.dumps({
             "action":1,"data":{},"reason":"move",

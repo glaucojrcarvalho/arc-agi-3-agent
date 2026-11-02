@@ -22,6 +22,7 @@ from arc_agent.transition_policy import TransitionPolicy
 from arc_agent.reasoning_memory import ReasoningMemory
 from arc_agent.novelty_explorer import NoveltyExplorer
 from arc_agent.action_evidence import ActionEvidence
+from arc_agent.observed_progress import ObservedProgressMemory
 
 
 class MyAgent(Agent):
@@ -42,6 +43,7 @@ class MyAgent(Agent):
         self._last_progress_events = 0
         self._explorer = NoveltyExplorer(self.game_id)
         self._action_evidence = ActionEvidence()
+        self._observed_progress = ObservedProgressMemory()
         self.model_calls = 0
         self.validation_fallbacks = 0
 
@@ -55,6 +57,7 @@ class MyAgent(Agent):
             self._feedback.on_reset()
             self._belief.on_reset()
             self._action_evidence.reset()
+            self._observed_progress.on_reset()
             self._last_processed_turn = self._feedback.turns
             return GameAction.RESET
 
@@ -79,6 +82,13 @@ class MyAgent(Agent):
         recent_transitions = self._feedback.feedback()
         newly_observed = self._feedback.turns != self._last_processed_turn
         self._last_processed_turn = self._feedback.turns
+        self._observed_progress.observe(
+            level=level,
+            transition=(
+                recent_transitions[-1]
+                if newly_observed and recent_transitions else None
+            ),
+        )
         self._belief.max_stagnation = (
             self.COMPLEX_NOVELTY_AFTER if complex_ids else self.KEYBOARD_NOVELTY_AFTER
         )
@@ -141,6 +151,9 @@ class MyAgent(Agent):
                 reasoning_context={
                     **self._belief.prompt_context(),
                     "action_attempt_evidence": self._action_evidence.prompt_context(),
+                    "observed_previous_level_progress": (
+                        self._observed_progress.prompt_context()
+                    ),
                 },
             )
 
@@ -213,6 +226,9 @@ class MyAgent(Agent):
             "validation_fallbacks": self.validation_fallbacks,
             "proven_noops": self._feedback.proven_noops,
             "level_progress_events": self._feedback.progress_events,
+            "verified_level_trace_count": (
+                self._observed_progress.progress_observations
+            ),
         }
         return action
 
