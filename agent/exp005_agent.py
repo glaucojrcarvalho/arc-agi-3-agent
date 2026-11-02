@@ -99,12 +99,10 @@ class MyAgent(Agent):
             self.COMPLEX_MODEL_REFRESH_EVERY if complex_ids
             else self.KEYBOARD_MODEL_REFRESH_EVERY
         )
-        heuristic_step = stuck and self._belief.steps_without_progress % refresh_period != 0
-        if heuristic_step:
-            self._belief.abort_plan()
-        plan_step = (
-            None if heuristic_step
-            else self._belief.take_plan(legal_actions=action_ids)
+        plan_step = self._belief.take_plan(legal_actions=action_ids)
+        heuristic_step = (
+            plan_step is None and stuck
+            and self._belief.steps_without_progress % refresh_period != 0
         )
         proposed: tuple[int, dict[str, int]] | None = None
         reason = ""
