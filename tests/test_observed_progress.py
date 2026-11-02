@@ -67,6 +67,28 @@ class ObservedProgressTests(unittest.TestCase):
         self.assertEqual(last["data"], {"x": 3})
         self.assertEqual(last["observed_changed_cells"], 4096)
 
+    def test_prompt_snapshot_cannot_rewrite_authoritative_history(self):
+        m = ObservedProgressMemory()
+        m.observe(level=0, transition=None)
+        m.observe(level=0, transition=step(1))
+        m.observe(level=1, transition=step(2, delta=1))
+        tampered = m.prompt_context()
+        tampered["completed_level_traces"][0]["to_level"] = 999
+        tampered["completed_level_traces"][0]["observed_steps_before_completion"][0]["action"] = 7
+        original = m.prompt_context()["completed_level_traces"][0]
+        self.assertEqual(original["to_level"], 1)
+        self.assertEqual(original["observed_steps_before_completion"][0]["action"], 1)
+        self.assertEqual(m.progress_observations, 1)
+
+    def test_boolean_or_float_delta_does_not_count_as_verified(self):
+        for invalid_delta in (True, 1.0, "1", None):
+            with self.subTest(delta=invalid_delta):
+                m = ObservedProgressMemory()
+                m.observe(level=0, transition=None)
+                m.observe(level=1, transition={"action": 1, "levels_delta": invalid_delta})
+                self.assertEqual(m.progress_observations, 0)
+                self.assertEqual(m.prompt_context()["completed_level_traces"], [])
+
     def test_invalid_parameters(self):
         for kwargs in ({"max_steps": 0}, {"max_levels": 0}, {"max_levels": 9}):
             with self.assertRaises(ValueError):

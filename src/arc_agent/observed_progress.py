@@ -5,6 +5,7 @@ mechanics, causal effects, or transfer to other levels.
 """
 from __future__ import annotations
 from collections import deque
+from copy import deepcopy
 from typing import Any, Mapping
 
 class ObservedProgressMemory:
@@ -72,7 +73,8 @@ class ObservedProgressMemory:
                 "They do not prove mechanics, causation, or transfer; "
                 "verify hypotheses on the current board."
             ),
-            "completed_level_traces": list(self._completed),
+            # Caller-owned snapshots must not mutate evidence kept for later levels.
+            "completed_level_traces": deepcopy(list(self._completed)),
         }
 
     def on_reset(self) -> None:
