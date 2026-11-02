@@ -1,158 +1,85 @@
 # ARC-AGI-3 Agent
 
-Experimental open-source agent research for **ARC-AGI-3**, focused on online adaptation, environment understanding, transition learning, and efficient action selection in previously unseen interactive tasks.
+**Research engineering for interactive, unfamiliar environments** — an independent exploration of state-aware agents, local multimodal inference, persistent hypotheses, adaptive exploration, and reproducible evaluation for [ARC Prize 2026 — ARC-AGI-3](https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3).
 
-> Status: Phase 0 local baseline completed. EXP-000 provides a reproducible control for model-driven and transition-aware experiments; competition submission remains separately gated by the documented public-code requirements.
+> **Research snapshot · 2 November 2026.** The stable `main` branch deliberately preserves the small EXP-000 control. Later Qwen-based prototypes and evaluations live in linked, **unmerged experimental PRs**. The best completed owner submission on Kaggle is **EXP-019 v1, public score 0.34** (displayed value, not a percentage conversion). This is not a claim of a winning solution, reproducible hidden-set improvement, or final leaderboard result.
 
-## Research questions
+[**Engineering case study**](docs/portfolio-case-study.md) · [**Architecture and boundaries**](docs/architecture.md) · [**Experiment evidence**](docs/experiment-evidence.md) · [**Run locally**](docs/setup.md)
 
-This repository explores a deliberately small set of questions:
+## The engineering problem
 
-- Can explicit state-transition memory improve adaptation to unseen tasks?
-- Can an agent distinguish useful exploration from goal-directed actions?
-- How much environment representation should be deterministic versus delegated to a multimodal model?
-- Can learned hypotheses reduce unnecessary actions while preserving task success?
+ARC-AGI-3 asks an agent to infer unfamiliar game mechanics from observations and actions, rather than retrieve known answers. This work tests three practical engineering questions:
 
-## Experimental approach
+1. How can the agent retain useful evidence across turns without confusing pixel movement with progress?
+2. When should it use expensive model reasoning, execute a validated short plan, or explore cheaply?
+3. How do we distinguish a successful offline run, a simulated public-game ablation, a real-Qwen probe, and an **official Kaggle score**?
 
-The first iterations intentionally keep the architecture small:
+The distinctive contribution is the **experimental discipline**: bounded state and action ledgers, contract-validated moves, explicit failure analysis, paired seeds, offline packaging, and results labeled by what was actually measured.
+
+## Selected evidence
+
+| Milestone | Evidence | What it establishes |
+| --- | --- | --- |
+| **EXP-000** | Local control score `0.08612196364871753`; environment and artifact hash in [results.csv](experiments/results.csv) | Reproducible random baseline; **not** a Kaggle leaderboard score |
+| **EXP-001** | Completed Kaggle submission; displayed public score **0.00** | Model-driven baseline reached official evaluation, without a scored improvement |
+| **EXP-005 v4 → EXP-009** | Matched **real Qwen** probes on four public games: **2 levels each**; 147 → 100 model calls; 700.78 → 502.36 s summed game wallclock | Lower inference cost in this probe; **not** higher level completion or a hidden-set score gain |
+| **EXP-019 v1** | Completed official Kaggle submission **57915318**; displayed public score **0.34** | The strongest completed official result recorded by the project owner as of this snapshot |
+| **EXP-022 / EXP-023** | Public, paired **fake-model** ablations: EXP-022 regressed in one session; EXP-023 tied all 75 | Useful regression/transport evidence; **not** a Qwen reasoning improvement |
+
+These rows use **different evaluation protocols** and must not be compared as if they were one leaderboard. Source links, sample sizes, negative results, and verification limits are in the [evidence ledger](docs/experiment-evidence.md). The Kaggle result is from authenticated owner submission history; the official hidden evaluation cannot be reproduced using the public-only harness.
+
+## Architecture at a glance
 
 ```text
-Observation
-    ↓
-State / Difference Detection
-    ↓
-Agent Reasoning
-    ↓
-Action
-    ↓
-Transition Memory
-    └──────────────→ next observation
+Game observation / legal actions / level count
+            |
+   Perception + state/transition differencing
+            |
+   Bounded evidence + provisional beliefs
+            |
+ Qwen reasoning  <-->  short validated plans
+            |                    |
+            +--- adaptive exploration / fallback
+                         |
+                 Legal-action validation
+                         |
+                    Game action
+                         |
+                  Observed outcome
 ```
 
-Planning, reflection, object-centric representations, and explicit world models are only introduced when measured failure modes justify them.
+This diagram describes the **experimental Qwen research line**, not the contents of `main`. See [architecture](docs/architecture.md) for exact source snapshots and contract boundaries.
 
-## Current baseline
+## Navigate the source
 
-`agent/my_agent.py` contains `EXP-000`, a reproducible random policy used as the control for the research program. It does not contain game-specific heuristics or a learned policy.
+- **Stable, runnable control:** [`agent/my_agent.py`](agent/my_agent.py), [`src/arc_agent/`](src/arc_agent/), [`tests/`](tests/), and [`experiments/results.csv`](experiments/results.csv).
+- **EXP-019 experimental implementation:** [snapshot at `6c4224b`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/6c4224b514b6bd3e99ec8bf89c957ffaa092afd3), [PR #25](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/25). The research snapshot is **not itself proof of the exact submitted notebook hash**.
+- **EXP-023 isolated memory hypothesis:** [snapshot at `94932cc`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/94932ccb00ba905519098f223034dca3d49e7728), [PR #28](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/28); not promoted, not scored with real Qwen.
+- **Research trail:** earlier experiments are linked through the [evidence ledger](docs/experiment-evidence.md). A draft PR is an experiment record, **not an accepted change to `main`**.
 
-The full local baseline completed successfully with an aggregate score of `0.08612196364871753`. The evaluated artifact hash and exact project/starter/framework/runtime provenance are recorded in `experiments/results.csv`. This is a local baseline result, not a Kaggle leaderboard score.
+## Run the stable baseline locally
 
-The next research milestone is `EXP-001`: a direct model policy with minimal scaffolding, evaluated against this control before adding persistent memory or planning.
-
-Reusable state differencing, transition memory, and structured-action validation primitives are implemented under `src/arc_agent/` and covered by unit tests. They are intentionally not enabled in `EXP-000`, preserving a clean control for later ablations.
-
-Transition metrics distinguish **effect** from **progress**. A state-changing action may be effectful without being beneficial; level-count increases are tracked separately as explicit progress.
-
-## Submission packaging
-
-The official ARC-AGI-3 starter packages only `agent/my_agent.py` into its generated notebook. It does not automatically include this repository's `src/arc_agent/` package.
-
-Build the standalone artifact before copying the agent into the starter:
+Requires Python 3.12. Running the tests does **not** require Kaggle credentials, Qwen weights, GPUs, or downloaded competition environments.
 
 ```bash
+git clone https://github.com/glaucojrcarvalho/arc-agi-3-agent.git
+cd arc-agi-3-agent
+python scripts/public_preflight.py --all
+python -m compileall -q agent scripts src tests
+PYTHONPATH=src python -m unittest discover -s tests -v
 python scripts/build_standalone_agent.py
 ```
 
-The generated `dist/my_agent.py` embeds `src/arc_agent/` only when the active agent imports it. For `EXP-000`, the output remains byte-for-byte identical to the source baseline.
+The standalone build writes ignored `dist/my_agent.py`. For full local-game execution use the **external** official [Kaggle starter](https://github.com/arcprize/ARC-AGI-3-Kaggle-Starter) and follow [setup](docs/setup.md). The default `main` checkout runs EXP-000; checking out a linked experimental commit changes both capabilities and validation obligations.
 
-See [`docs/setup.md`](docs/setup.md) for the complete workflow.
+## Reproducibility and responsible publication
 
-## Reproducibility
+A verified improvement requires a documented hypothesis, a fixed project revision, identical public games/seeds/limits, a compatible model/runtime, error and wallclock reporting, and a **level-completion** metric. Pixel changes, plan count, simulated-model wins, successful `save-and-run`, and official competition submission are different signals.
 
-Evaluated experiments record the project revision, exact upstream starter/framework revisions, the **starter runtime's** Python and `arc-agi` versions, whether the project working tree was dirty, and the SHA-256 of the standalone agent artifact actually evaluated.
+Source may be published, but **credentials, hidden game data, competition submissions, checkpoints, and raw private traces do not belong in Git**. Use [publication policy](docs/publication-policy.md) and [development workflow](docs/development.md). License for the current `main` source: [Apache-2.0](LICENSE); competition prize eligibility and third-party code licenses require separate review.
 
-Capture that provenance immediately before an evaluated run:
+## References and attribution
 
-```bash
-python scripts/capture_environment.py \
-  --starter ../ARC-AGI-3-Kaggle-Starter
-```
+[ARC Prize](https://arcprize.org/) · [ARC-AGI-3 competition and rules](https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3/rules) · [Official ARC agent framework](https://github.com/arcprize/ARC-AGI-3-Agents) · [Official Kaggle starter](https://github.com/arcprize/ARC-AGI-3-Kaggle-Starter)
 
-The command fails with incomplete provenance if the starter runtime, framework checkout, or standalone agent artifact cannot be identified. Results are recorded in [`experiments/results.csv`](experiments/results.csv); scores are only added after an actual run.
-
-## Public competition code
-
-Kaggle's competition rules permit public Competition Code, but require code shared publicly during the competition to also be shared on the competition's Kaggle discussion forum or associated notebooks. This repository therefore needs a corresponding ARC-AGI-3 Kaggle disclosure; once posted, that reference will be linked here.
-
-## Development workflow
-
-`main` is the stable research line. Normal implementation happens on short-lived branches and enters through pull requests. Local Git worktrees are recommended when multiple experiments or infrastructure tasks are active in parallel.
-
-See [`docs/development.md`](docs/development.md) for the branch/worktree conventions and PR checklist.
-
-## Repository structure
-
-```text
-agent/
-└── my_agent.py                 Current EXP-000 agent
-
-src/arc_agent/
-├── actions.py                  Structured model-output validation
-├── memory.py                   Bounded transition memory
-└── state.py                    Frame fingerprints and state differencing
-
-tests/
-├── test_actions.py
-├── test_agent_contract.py      Active agent behavior against ARC-like stubs
-├── test_capture_environment.py Environment provenance validation
-├── test_memory.py
-├── test_packaging.py           Standalone bundle/import validation
-└── test_state.py
-
-experiments/
-└── results.csv                 Experiment registry and provenance
-
-docs/
-├── development.md              PR/worktree workflow
-├── model-baseline.md           Planned EXP-001 model baseline
-├── publication-policy.md       Public-repository rules
-├── research-plan.md            Incremental research program
-└── setup.md                    Local starter integration
-
-scripts/
-├── build_standalone_agent.py   One-file Kaggle-compatible packager
-├── capture_environment.py      Public-safe experiment provenance capture
-└── public_preflight.py         Staged/all-file safety scanner
-
-.github/workflows/
-└── ci.yml                      Safety, syntax, and unit-test checks
-```
-
-Competition datasets, credentials, generated submission artifacts, standalone build outputs, local recordings, model checkpoints, and other non-source artifacts are intentionally excluded from version control.
-
-Before publishing changes, follow [`docs/publication-policy.md`](docs/publication-policy.md) and run:
-
-```bash
-python scripts/public_preflight.py
-```
-
-CI additionally scans all tracked files, compiles Python sources, and runs unit tests on every push and pull request.
-
-## Research plan
-
-The planned progression is documented in [`docs/research-plan.md`](docs/research-plan.md):
-
-1. pipeline baseline;
-2. direct model policy;
-3. transition awareness;
-4. hypothesis-driven exploration;
-5. structured planning only when supported by measured failure modes.
-
-The current model-baseline candidate and promotion gates are documented separately in [`docs/model-baseline.md`](docs/model-baseline.md).
-
-## References
-
-- ARC Prize: https://arcprize.org/
-- ARC-AGI-3 Kaggle competition: https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3
-- ARC-AGI-3 competition rules: https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3/rules
-- ARC-AGI-3 agent framework: https://github.com/arcprize/ARC-AGI-3-Agents
-- Official ARC-AGI-3 Kaggle starter: https://github.com/arcprize/ARC-AGI-3-Kaggle-Starter
-
-## License
-
-Licensed under the Apache License 2.0. See [LICENSE](LICENSE).
-
-## Disclaimer
-
-This is an independent research project and is not affiliated with or endorsed by the ARC Prize Foundation or Kaggle.
+Independent research repository; not affiliated with or endorsed by ARC Prize, Kaggle, or the authors of external reference agents.
