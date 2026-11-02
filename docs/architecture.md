@@ -1,6 +1,6 @@
 # Architecture: a small baseline and a measured research line
 
-This page describes **two different source states**. On `main` the code is the EXP-000 control plus reusable primitives. The richer Qwen-driven architecture is **experimental code in unmerged PRs**, principally [EXP-019](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/25) at [commit `6c4224b`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/6c4224b514b6bd3e99ec8bf89c957ffaa092afd3). Do not assume the experimental modules are present in a fresh `main` checkout.
+This page describes **two different source states**. The default `agent/my_agent.py` is the EXP-000 control; the richer Qwen architecture is **opt-in source included in this repository for engineering review**, originally developed in [EXP-019](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/25) at [commit `6c4224b`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/6c4224b514b6bd3e99ec8bf89c957ffaa092afd3). Do not assume the experimental modules are present in a fresh `main` checkout.
 
 ## Data and decision flow (experimental)
 
@@ -36,7 +36,7 @@ A prior observation can show changed pixels without any goal progress. Verified 
 | Contract | `actions.py` and agent integration tests | Validate structured output and available actions; constrain click coordinates |
 | Packaging | `scripts/build_kaggle_exp005_notebook.py` | Offline notebook construction distinct from public smoke tests and competition submission |
 
-The references above are relative to the [EXP-019 experimental snapshot](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/6c4224b514b6bd3e99ec8bf89c957ffaa092afd3), **not** `main`. The stable branch exposes `actions.py`, `memory.py`, and `state.py`, but its active policy is the EXP-000 random control.
+The paths above are present in this consolidated code tree. The [EXP-019 source snapshot](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/6c4224b514b6bd3e99ec8bf89c957ffaa092afd3) remains immutable for provenance. The default agent is still EXP-000; use `agent/exp005_agent.py` explicitly for the model-based research line.
 
 ## Key engineering decisions
 

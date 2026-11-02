@@ -2,7 +2,7 @@
 
 **Research engineering for interactive, unfamiliar environments** — an independent exploration of state-aware agents, local multimodal inference, persistent hypotheses, adaptive exploration, and reproducible evaluation for [ARC Prize 2026 — ARC-AGI-3](https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3).
 
-> **Research snapshot · 2 November 2026.** The stable `main` branch deliberately preserves the small EXP-000 control. Later Qwen-based prototypes and evaluations live in linked, **unmerged experimental PRs**. The best completed owner submission on Kaggle is **EXP-019 v1, public score 0.34** (displayed value, not a percentage conversion). This is not a claim of a winning solution, reproducible hidden-set improvement, or final leaderboard result.
+> **Research snapshot · 2 November 2026.** The default `agent/my_agent.py` remains the reproducible EXP-000 control. The repository additionally includes **separate opt-in Qwen research policies** and tested EXP-019-lineage engineering. Consolidating code for a portfolio is not a new competition submission. The best completed owner submission on Kaggle is **EXP-019 v1, public score 0.34** (displayed value, not a percentage conversion). This is not a claim of a winning solution, reproducible hidden-set improvement, or final leaderboard result.
 
 [**Engineering case study**](docs/portfolio-case-study.md) · [**Architecture and boundaries**](docs/architecture.md) · [**Experiment evidence**](docs/experiment-evidence.md) · [**Run locally**](docs/setup.md)
 
@@ -48,14 +48,15 @@ Game observation / legal actions / level count
                   Observed outcome
 ```
 
-This diagram describes the **experimental Qwen research line**, not the contents of `main`. See [architecture](docs/architecture.md) for exact source snapshots and contract boundaries.
+This diagram describes the **experimental Qwen source in `agent/exp005_agent.py`**, not the active EXP-000 default control. See [architecture](docs/architecture.md) for exact source snapshots and contract boundaries.
 
 ## Navigate the source
 
-- **Stable, runnable control:** [`agent/my_agent.py`](agent/my_agent.py), [`src/arc_agent/`](src/arc_agent/), [`tests/`](tests/), and [`experiments/results.csv`](experiments/results.csv).
-- **EXP-019 experimental implementation:** [snapshot at `6c4224b`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/6c4224b514b6bd3e99ec8bf89c957ffaa092afd3), [PR #25](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/25). The research snapshot is **not itself proof of the exact submitted notebook hash**.
+- **Stable, runnable control:** [`agent/my_agent.py`](agent/my_agent.py) and independent [EXP-000 tests](tests/test_exp000_agent.py).
+- **Opt-in research policies:** [EXP-001 direct Qwen](agent/exp001_agent.py) and [EXP-005/019 Qwen line](agent/exp005_agent.py), with shared [state, perception, planning and model modules](src/arc_agent/).
+- **EXP-019 research provenance:** [immutable snapshot `6c4224b`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/6c4224b514b6bd3e99ec8bf89c957ffaa092afd3), [historical PR #25](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/25). Consolidated code is **not proof of the exact notebook submitted to Kaggle**.
 - **EXP-023 isolated memory hypothesis:** [snapshot at `94932cc`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/94932ccb00ba905519098f223034dca3d49e7728), [PR #28](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/28); not promoted, not scored with real Qwen.
-- **Research trail:** earlier experiments are linked through the [evidence ledger](docs/experiment-evidence.md). A draft PR is an experiment record, **not an accepted change to `main`**.
+- **Research trail:** earlier experiments are linked through the [evidence ledger](docs/experiment-evidence.md). A draft PR is an experiment record, **not evidence of improved score**. See the [opt-in research quickstart](docs/research-quickstart.md).
 
 ## Run the stable baseline locally
 

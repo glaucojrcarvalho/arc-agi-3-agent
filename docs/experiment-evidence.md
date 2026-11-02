@@ -1,6 +1,6 @@
 # Experiment evidence and result provenance
 
-**Snapshot date:** 2026-11-02. This is a **curated research index**, not a full reproduction of 25 draft PR discussions. The authoritative source for each candidate is its linked PR and immutable commit. The historical `main` [results.csv](../experiments/results.csv) presently records **EXP-000 only**; it must not be treated as an inventory of later scored Kaggle submissions.
+**Snapshot date:** 2026-11-02. This is a **curated research index**, not a full reproduction of 25 draft PR discussions. The authoritative source for each candidate is its linked PR and immutable commit. The [results.csv](../experiments/results.csv) contains an evaluated EXP-000 local baseline and an **unfilled historical EXP-001 planning row**. It is not a full registry of official Kaggle submissions.
 
 ## Evidence hierarchy
 
@@ -36,7 +36,7 @@ The two synthetic probe protocols differ (including fake-model behavior). Do **n
 
 ## Reproduce the public checks
 
-A fresh `main` checkout reproduces the baseline code/tests, **not** the EXP-019 research snapshot or its Kaggle notebook:
+A fresh `main` checkout now contains the default EXP-000 control and experimental source/tests from the EXP-019 lineage. It still does **not** reproduce the scored private Kaggle notebook or real-Qwen GPU observations:
 
 ```bash
 python scripts/public_preflight.py --all
@@ -45,7 +45,7 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 python scripts/build_standalone_agent.py
 ```
 
-To reproduce a specific experimental probe, check out the **exact linked commit**, obtain the permitted **public ARC game environments** separately, match the recorded policy RNG seeds and per-game budget, and use that experiment's documented command. Fake-model results do not require Qwen. Real-Qwen comparison requires the relevant offline model, serving runtime and GPU resources. Official Kaggle scoring cannot be reconstructed from these public games.
+To reproduce the exact historical protocol for a specific experimental probe, check out the **exact linked commit**, obtain the permitted **public ARC game environments** separately, match the recorded policy RNG seeds and per-game budget, and use that experiment's documented command. Fake-model results do not require Qwen. Real-Qwen comparison requires the relevant offline model, serving runtime and GPU resources. Official Kaggle scoring cannot be reconstructed from these public games.
 
 For evaluated baseline provenance:
 
