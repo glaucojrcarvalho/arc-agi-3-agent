@@ -58,7 +58,10 @@ python scripts/compare_public_controller_seeds.py --baseline experiments/exp023-
 
 Machine-readable experiment logs are committed under `experiments/exp023-*`.
 The final generated standalone agent SHA-256 is
-`86ae5c5f57b7c36d765ec5d1d1ff1f0bb2b9e636d52f36ececceea80fdf3103c`.
+`d3a31895d0e8c1b4cb7ec77e2a318081800da7b82c68e86e8ad09900d5bf2c65`.
+This digest was independently reproduced twice from a clean detached checkout
+at `94932ccb` on 2026-11-02 (UTC); the previously documented digest was stale.
+The correction changes documentation only, not agent code or competition scoring.
 
 ## Technical verdict and competition guard
 
