@@ -1,0 +1,71 @@
+{
+  "baseline_actions": 320,
+  "baseline_levels": 1,
+  "baseline_model_calls": 88,
+  "baseline_wallclock_seconds": 426.56,
+  "candidate_actions": 320,
+  "candidate_levels": 1,
+  "candidate_model_calls": 86,
+  "candidate_wallclock_seconds": 410.58,
+  "controller_seed": 101,
+  "environment_seed": 0,
+  "games": 4,
+  "interpretation": "Levels and completion actions are verified using levels_completed, not pixel changes. A single public run does not establish RHAE or competition-score improvement; CPU/GPU wallclock varies.",
+  "model_call_reduction_percent": 2.27,
+  "protocol": "paired-4-public-games/real-model/no-RHAE/no-private-data",
+  "public_games": [
+    {
+      "baseline_first_completion_action": null,
+      "baseline_levels": 0,
+      "baseline_model_calls": 11,
+      "baseline_wallclock_seconds": 47.81,
+      "candidate_first_completion_action": null,
+      "candidate_levels": 0,
+      "candidate_model_calls": 11,
+      "candidate_wallclock_seconds": 47.67,
+      "game": "ls20",
+      "level_delta": 0,
+      "paired_first_completion_action_delta": null
+    },
+    {
+      "baseline_first_completion_action": 46,
+      "baseline_levels": 1,
+      "baseline_model_calls": 27,
+      "baseline_wallclock_seconds": 138.85,
+      "candidate_first_completion_action": 59,
+      "candidate_levels": 1,
+      "candidate_model_calls": 25,
+      "candidate_wallclock_seconds": 122.93,
+      "game": "r11l",
+      "level_delta": 0,
+      "paired_first_completion_action_delta": 13
+    },
+    {
+      "baseline_first_completion_action": null,
+      "baseline_levels": 0,
+      "baseline_model_calls": 25,
+      "baseline_wallclock_seconds": 118.14,
+      "candidate_first_completion_action": null,
+      "candidate_levels": 0,
+      "candidate_model_calls": 25,
+      "candidate_wallclock_seconds": 117.36,
+      "game": "tn36",
+      "level_delta": 0,
+      "paired_first_completion_action_delta": null
+    },
+    {
+      "baseline_first_completion_action": null,
+      "baseline_levels": 0,
+      "baseline_model_calls": 25,
+      "baseline_wallclock_seconds": 121.76,
+      "candidate_first_completion_action": null,
+      "candidate_levels": 0,
+      "candidate_model_calls": 25,
+      "candidate_wallclock_seconds": 122.62,
+      "game": "vc33",
+      "level_delta": 0,
+      "paired_first_completion_action_delta": null
+    }
+  ],
+  "wallclock_reduction_percent": 3.75
+}
