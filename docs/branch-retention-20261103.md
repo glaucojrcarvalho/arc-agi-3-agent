@@ -25,9 +25,11 @@ taking any lifecycle action.
 
 ## Verified snapshot / decision matrix
 
-At observed `main` **`59f2c8eb58283cb5b3f1df88b5d618508a6e278a`**:
-32 remote branch refs, including `main`; **16 additional reachable branch
-heads** and **15 heads with distinct commits**. Counts are *head ancestry*,
+Before creation of this audit branch, at observed `main`
+**`59f2c8eb58283cb5b3f1df88b5d618508a6e278a`**: 32 remote branch
+refs including `main`; **16 reachable** and **15 heads with distinct
+commits**. This PR's new branch adds one more unmerged ref until integration.
+Counts are *head ancestry*,
 not a list of unique experimental ideas or verification of code correctness.
 
 | Group | Branches | Disposition |
