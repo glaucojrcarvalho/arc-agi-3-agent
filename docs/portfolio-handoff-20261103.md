@@ -27,6 +27,44 @@ A fresh, detached clone at PR #30 head `da341261d088aa40ac133a0464ec5c04a036a996
 
 A public-game smoke via `scripts/smoke_exp005_public_offline.py` was **not completed** in the isolated clone: the optional external `arc_agi` package was absent. This is not equivalent to a failed agent benchmark, nor should build/syntax checks be described as a game-playing evaluation. The intended local test command **requires** `PYTHONPATH=src`; omitting that environment variable reproduced an import failure, which disappeared with the documented command.
 
+## Finalized multi-seed evaluator — PR #12 (2026-11-03 UTC)
+
+[PR #12](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/12)
+was retargeted from the obsolete EXP-005 feature base to `main` and merged
+with history-preserving commit
+[`f340b8e86e8130ae3cebba1ea79ac981e10c5741`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/commit/f340b8e86e8130ae3cebba1ea79ac981e10c5741).
+The exact dry-run merge and real merge had matching Git tree
+`680783649b9484ee3a00cae7295bc4ee11a68571`. Three paths changed:
+`scripts/evaluate_public_exploration.py`,
+`tests/test_public_exploration_multiseed.py`, and
+`docs/exp006-multiseed-public-screen.md`.
+
+An isolated Python 3.12.15 worktree passed `public_preflight --all` (**93
+tracked files**), `compileall`, **157/157 unittests**, standalone building,
+`py_compile` and `git diff --check` before merge, and the same gates after.
+Default EXP-000 agent Git blob remained `9695133008db25b63f042ea6371c34a57308a710`.
+
+Unlike the earlier smoke blocker, the public-only `arc_agi` package and
+environment files were available in this dedicated validation environment.
+The merged seed-aware evaluator completed **8 deterministic offline sessions,
+120 actions, 0 level completions** on public `r11l`/`tn36` (seeds 0,1,
+random/novelty, 15 moves each). The correct EXP-005 FAKE-model standalone
+then completed **2 public sessions, 10 moves, 10 simulated calls, 0 levels**
+without contract failures. An initial misconfigured invocation tried the
+EXP-005 smoke with an EXP-000 standalone and failed because EXP-000 lacks
+`model_calls`; using the intended EXP-005 source resolved the invocation.
+Neither run is real-Qwen validation, an EXP-019 replay, or new scoring evidence.
+
+Now **three open PRs remain**: #5 (relicensing blocked), #26 (seeded
+comparison/evaluation still isolated), #28 (unvalidated EXP-023 memory).
+An isolated dry-run of #26 after the #12 merge produced an add/add merge
+conflict in `scripts/compare_real_public_probes.py` against merged #16.
+It was aborted without touching other agents' worktrees or updating #26.
+The correct follow-up is a separately reviewed extraction of compatible
+strict-seed/per-level completion validation and tests; preserve EXP-021's
+non-improved real-Qwen 1-versus-1-level comparison in its PR history.
+There was **no new Kaggle submission** or change to EXP-019 v1 0.34.
+
 ## PR disposition after integration
 
 **2026-11-03 portfolio checkpoint:** [PR #16](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/16) merged into `main` as [`d7eb2bb`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/commit/d7eb2bb653b626f85b1d6cc2e188d3ac0fe1aa23). Only `scripts/compare_real_public_probes.py`, `tests/test_compare_real_public_probes.py` and `docs/exp010-real-qwen-probe-audit.md` were added. The exact prospective merge tree and post-merge tree matched (`b9e8c99becb976b3a2ca4f3928b65b0aae8068b5`); the default EXP-000, EXP-005 policy and Kaggle builder retained their original Git blobs. A fresh detached post-merge checkout passed **154/154** unit tests, clean public preflight (**91 tracked files**), `compileall`, standalone packaging and `py_compile`. The external `arc_agi` package was absent; **no live public-game smoke** or new real-Qwen comparison was performed. The EXP-010 audit is read-only, historical, and not a score promotion.
@@ -34,7 +72,8 @@ A public-game smoke via `scripts/smoke_exp005_public_offline.py` was **not compl
 - **Integrated/superseded**, with reachable source commits preserved: #3, #7, #8, #9, #10, #11, #13, #14, #15, #25; [#30](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/30) is merged. Closed PRs retain their links, review conversations, test results, and negative evidence.
 - **Archived negative study:** [#17](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/17). Do not merge its regressive balanced-click policy. Only the independent public game-ID/RNG alias correction merits a new narrowly scoped evaluation PR.
 - **Integrated audit-only utility:** [#16](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/16) real-Qwen historical public-probe comparison (not a scoring improvement).
-- **Keep isolated for selective, reviewed extraction:** [#12](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/12) multi-seed evaluator; [#26](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/26) strict seeded comparisons; [#28](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/28) unvalidated observed-completion memory.
+- **Integrated after validation:** [#12](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/12) multi-seed public evaluator; see the post-merge gate above.
+- **Keep isolated for selective, reviewed extraction:** [#26](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/26) strict seeded comparisons (merge conflict with #16); [#28](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/28) unvalidated observed-completion memory.
 - **Licensing hold:** [#5](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/5) proposes relicensing. Maintain existing Apache-2.0 until authorship, external-code attributions, and competition requirements have been reviewed. Do not present a code license as automatic award eligibility.
 
 At the consolidation snapshot, there were **30 remote branches**. Their reachability from `main` was checked before any cleanup; branches with unique unmerged commits have been retained. **No force pushes, history rewrites or remote branch deletions** were performed. Repository description/topics are not asserted changed.
