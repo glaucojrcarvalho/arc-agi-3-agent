@@ -72,7 +72,7 @@ notebook execution and game progress.
 3. Verify Qwen inference and four completed public-game checkpoints.
 4. Compare levels, actions, model calls and elapsed time against EXP-004,
    noting its three 15-action public games were a much smaller budget.
-5. Do not invoke competition submit endpoint before approval on 2026-11-02.
+5. Do not invoke a competition submission endpoint as part of this public-probe experiment.
    Do not equate public progress to the leaderboard score.
 
 Background: https://openai.com/index/how-two-settings-tripled-our-arc-agi-3-scores/

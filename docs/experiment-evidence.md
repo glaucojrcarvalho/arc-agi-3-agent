@@ -1,6 +1,6 @@
 # Experiment evidence and result provenance
 
-**Snapshot date:** 2026-11-02. This is a **curated research index**, not a full reproduction of 25 draft PR discussions. The authoritative source for each candidate is its linked PR and immutable commit. The [results.csv](../experiments/results.csv) contains an evaluated EXP-000 local baseline and an **unfilled historical EXP-001 planning row**. It is not a full registry of official Kaggle submissions.
+This is a curated index of experiment provenance and evaluation methods. Source revisions and detailed protocols are linked for each result. The [results.csv](../experiments/results.csv) contains a completed EXP-000 local baseline and an unfilled historical EXP-001 planning row; it is not a complete record of Kaggle submissions.
 
 ## Evidence hierarchy
 
@@ -30,7 +30,7 @@ The two synthetic probe protocols differ (including fake-model behavior). Do **n
 ## What we can conclude
 
 - The real-Qwen EXP-009 public probe reduced model calls and elapsed game time relative to EXP-005 v4 **without adding completed levels** on the matched four games.
-- The EXP-019 score of **0.34** is the strongest completed owner Kaggle result recorded by this project as of the snapshot; it is **not a paired hidden-set causal comparison** and its exact submitted notebook hash is not established by the `main` CSV.
+- EXP-019 v1 recorded a public Kaggle score of **0.34**. This is **not a paired hidden-set causal comparison**, and the exact submitted notebook hash cannot be recovered from the `main` CSV.
 - EXP-022 provides a concrete negative test. EXP-023 provides non-regression only under a fake model that ignores its new prompt.
 - No evidence establishes human-level performance, reliable unseen-game generalization, or a statistically significant gain from the pending memory change.
 
