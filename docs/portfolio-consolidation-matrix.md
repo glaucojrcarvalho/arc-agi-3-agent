@@ -4,6 +4,26 @@
 **portfolio integration plan**, not an ARC-AGI-3 scoring result or evidence
 of an improved competitive agent. Re-check live refs before each mutation.
 
+## Latest decision ledger — 2026-11-03
+
+| PR | Final engineering disposition | Protection |
+| --- | --- | --- |
+| [#32](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/32) | **MERGED** as `5826438d` after isolated 164-test gate, preflight, syntax and artifact packaging | Validation-only; no agent policy or official submission changes |
+| [#26](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/26) | **CLOSED / ARCHIVED** original EXP-020/021 hypothesis; extracted only seed/milestone contract into #32 | Real-Qwen 1 vs 1 level; first completion 13 actions later in candidate; preserve branch, raw study history and negative evidence |
+| [#28](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/28) | **CLOSED / ARCHIVED** EXP-023 fake-model neutral result, 6 vs 6 levels | No real-Qwen pair; no policy promotion; branch preserved |
+| [#5](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/5) | **KEEP OPEN / LEGAL HOLD** relicensing proposal | Third-party source licenses and submitter-authored license rights not resolved; Apache-2.0 unchanged |
+| [#27](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/27) | **CLOSED / NEGATIVE** EXP-022 prior regression | 7 vs 6 fake-model levels; no competitive-score promotion |
+
+The current `main` holds an updated comparator while retaining the
+historical unseeded interface. The independent post-merge validation
+was **164/164 Python tests**, 94-file public preflight, `compileall`,
+standalone build and `py_compile`. The `arc_agi` dependency was not
+available in that worktree, so no new public-game smoke was asserted.
+The official EXP-019 v1 evidence (public 0.34) remains external and
+unchanged. An audit of **32 remote heads** found 17 reachable from
+`main` and 15 with unique history; no ref deletion or force push.
+No Kaggle submission was attempted after the deadline.
+
 ## Post-deadline disposition (2026-11-03)
 
 The matrix below is retained as the **pre-merge decision record**. Its gate for #30 is now satisfied: [PR #30](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/30) was merged into `main` as `feb4f6e3672f1f76467e8e72d97f1eb322a44a29` after the deadline, following independent 150/150 unit tests, a clean 87-file public preflight, compileall, three standalone packaging/syntax checks and a clean detached clone. The model-free EXP-000 default's Git blob remained byte-identical. Ancestor PRs #3, #7, #8, #9, #10, #11, #13, #14, #15 and #25 are closed/integrated; rejected EXP-011 PR #17 was closed with negative evidence retained. At the next post-deadline checkpoint, [PR #16](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/16) was merged as `d7eb2bb653b626f85b1d6cc2e188d3ac0fe1aa23` after a clean, tree-identical simulated merge, 154/154 tests, a clean 91-file public preflight, compilation and standalone packaging. The imported real-Qwen audit comparator is **read-only, historical and not a scoring promotion**; the earlier #16 row below records the pre-merge decision. Remaining isolated PRs #5, #12, #26 and #28 are **not automatically mergeable by evidence**. The authoritative state and next steps are in the [post-deadline handoff](portfolio-handoff-20261103.md).
