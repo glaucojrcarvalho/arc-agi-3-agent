@@ -4,6 +4,10 @@
 **portfolio integration plan**, not an ARC-AGI-3 scoring result or evidence
 of an improved competitive agent. Re-check live refs before each mutation.
 
+## Post-deadline disposition (2026-11-03)
+
+The matrix below is retained as the **pre-merge decision record**. Its gate for #30 is now satisfied: [PR #30](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/30) was merged into `main` as `feb4f6e3672f1f76467e8e72d97f1eb322a44a29` after the deadline, following independent 150/150 unit tests, a clean 87-file public preflight, compileall, three standalone packaging/syntax checks and a clean detached clone. The model-free EXP-000 default's Git blob remained byte-identical. Ancestor PRs #3, #7, #8, #9, #10, #11, #13, #14, #15 and #25 are closed/integrated; rejected EXP-011 PR #17 was closed with negative evidence retained. Remaining isolated PRs #5, #12, #16, #26 and #28 are **not automatically mergeable by evidence**. The authoritative state and next steps are in the [post-deadline handoff](portfolio-handoff-20261103.md).
+
 ## Safety boundary and source of truth
 
 - Default `main`: `ecae40ddbcb6bba57625ddf76145a37a71a638e8` at snapshot.

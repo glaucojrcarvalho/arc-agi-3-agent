@@ -1,6 +1,6 @@
 # Architecture: a small baseline and a measured research line
 
-This page describes **two different source states**. The default `agent/my_agent.py` is the EXP-000 control; the richer Qwen architecture is **opt-in source included in this repository for engineering review**, originally developed in [EXP-019](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/25) at [commit `6c4224b`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/6c4224b514b6bd3e99ec8bf89c957ffaa092afd3). Do not assume the experimental modules are present in a fresh `main` checkout.
+This page describes **two different source states**. The default `agent/my_agent.py` is the EXP-000 control; the richer Qwen architecture is **opt-in source included in this repository for engineering review**, originally developed in [EXP-019](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/25) at [commit `6c4224b`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/tree/6c4224b514b6bd3e99ec8bf89c957ffaa092afd3). Since the verified post-deadline merge of [PR #30](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/30) on 2026-11-03, these experimental source modules **are included in a fresh `main` checkout**. They remain strictly opt-in; the default agent is EXP-000, and Qwen runtime, weights and external game dependencies are not bundled.
 
 ## Data and decision flow (experimental)
 
