@@ -4,11 +4,48 @@ import json
 from pathlib import Path
 
 
+
+def _probe_seeds(probe):
+    """Return explicit public-only pairing metadata; never infer missing seeds."""
+    if 'probe_protocol' not in probe:
+        return None  # Historical unseeded probes lack an auditable seed pair.
+    protocol = probe['probe_protocol']
+    if not isinstance(protocol, dict):
+        raise ValueError('invalid public probe protocol')
+    if protocol.get('official_submission') is not False:
+        raise ValueError('probe must be labeled non-submission')
+    if protocol.get('verified_progress') != 'levels_completed':
+        raise ValueError('probe lacks authoritative level-counter provenance')
+    for key in ('controller_seed', 'environment_seed'):
+        if key not in protocol:
+            raise ValueError('missing '+key)
+        seed = protocol[key]
+        if key == 'controller_seed' and seed is None:
+            continue  # Explicitly unseeded, not an independent RNG trial.
+        if isinstance(seed, bool) or not isinstance(seed, int) or seed < 0:
+            raise ValueError('invalid '+key)
+    return protocol['controller_seed'], protocol['environment_seed']
+
+
+def _milestones(trace):
+    """Derive verified completions from increasing max(levels_completed)."""
+    highest = 0
+    events = []
+    for action, frame in enumerate(trace, 1):
+        level = frame['levels_completed']
+        if level > highest:
+            events.extend({'level': n, 'after_action': action}
+                          for n in range(highest + 1, level + 1))
+            highest = level
+    return events
+
+
 def _rows(probe):
     if probe.get('probe_complete') is not True:
         raise ValueError('incomplete public probe')
     if 'qwen' not in str(probe.get('model', '')).lower():
         raise ValueError('not a real Qwen probe')
+    seeds = _probe_seeds(probe)
     rows = probe.get('results')
     if not isinstance(rows, list) or not rows or probe.get('completed_games') != len(rows):
         raise ValueError('malformed public probe inventory')
@@ -19,6 +56,10 @@ def _rows(probe):
             raise ValueError('invalid game')
         if name in results:
             raise ValueError('duplicate game')
+        if seeds is not None:
+            for field, expected in zip(('controller_seed', 'environment_seed'), seeds):
+                if field not in row or isinstance(row[field], bool) or row[field] != expected:
+                    raise ValueError('game '+field+' disagrees with probe protocol')
         for key in ('actions', 'max_levels_completed', 'model_calls'):
             val = row.get(key)
             if isinstance(val, bool) or not isinstance(val, int) or val < 0:
@@ -29,15 +70,23 @@ def _rows(probe):
         trace = row.get('action_trace')
         if not isinstance(trace, list) or len(trace) != row['actions']:
             raise ValueError('trace/actions mismatch')
-        if any(not isinstance(t.get('levels_completed'),int) or isinstance(t.get('levels_completed'),bool) or t['levels_completed']<0 for t in trace):
+        if any(not isinstance(t,dict) or not isinstance(t.get('levels_completed'),int) or isinstance(t.get('levels_completed'),bool) or t['levels_completed']<0 for t in trace):
             raise ValueError('invalid trace levels')
         if trace and max(t['levels_completed'] for t in trace) != row['max_levels_completed']:
             raise ValueError('trace/level mismatch')
+        reported = row.get('level_completion_actions')
+        if seeds is not None and reported is None:
+            raise ValueError('missing authoritative level milestones')
+        if reported is not None and reported != _milestones(trace):
+            raise ValueError('milestone/trace mismatch')
         results[name] = row
     return results
 
 
 def compare(baseline, candidate):
+    before_seeds, after_seeds = _probe_seeds(baseline), _probe_seeds(candidate)
+    if before_seeds != after_seeds:
+        raise ValueError('unpaired controller/environment seeds')
     b,c = _rows(baseline),_rows(candidate)
     if baseline['model']!=candidate['model']:
         raise ValueError('model mismatch')
@@ -67,6 +116,10 @@ def compare(baseline, candidate):
     return {
         'protocol':'real-Qwen/public-only/same-games-actions/not-official-RHAE',
         'model':baseline['model'],'games':len(b),'actions':sum_field(b,'actions'),
+        'controller_seed':before_seeds[0] if before_seeds else None,
+        'environment_seed':before_seeds[1] if before_seeds else None,
+        'pairing_provenance':('explicit-public-protocol' if before_seeds is not None
+                              else 'legacy-unseeded-not-independently-paired'),
         'baseline_levels':sum_field(b,'max_levels_completed'),
         'candidate_levels':sum_field(c,'max_levels_completed'),
         'baseline_qwen_calls':old_calls,'candidate_qwen_calls':new_calls,
