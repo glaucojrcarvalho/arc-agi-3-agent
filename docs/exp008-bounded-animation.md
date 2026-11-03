@@ -106,4 +106,4 @@ improvement in completed levels is observed in the paired public screen.
 - Verify the real-Qwen v4 checkpoint for four public games, inference calls,
   actual completed levels, wallclock, and runtime errors.
 - Keep this PR draft and perform **no official competition submission**
-  before the Monday 2026-11-02 review with the user.
+  before interpreting this change as a competitive improvement.

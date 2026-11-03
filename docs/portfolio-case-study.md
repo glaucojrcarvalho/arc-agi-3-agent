@@ -22,7 +22,7 @@ The initial `main` branch intentionally keeps a reproducible random control, rat
 
 In one **real Qwen3.8-27B FP8** public four-game comparison, EXP-005 v4 and EXP-009 each completed two levels in 80 actions per game. Model calls fell **147 → 100**, while summed per-game wallclock fell **700.78 → 502.36 seconds**. That is a meaningful efficiency observation within this protocol, **not** evidence of higher accuracy or generalization.
 
-Two official submissions completed. EXP-001 displayed public **0.00**; EXP-019 v1 displayed **0.34** in the owner's authenticated Kaggle history on 2 November 2026. The result is real, but neither a reproducible hidden-score test nor a proof that EXP-019's prompt ledger caused the change.
+Two official submissions completed: EXP-001 displayed a public score of **0.00**, and EXP-019 v1 displayed **0.34**. These are historical Kaggle results, not a reproducible hidden-task comparison or evidence that one specific prompt change caused the outcome.
 
 The experiment log also contains a **negative** result: EXP-022 produced one regression in 75 public paired fake-model sessions and was rejected. EXP-023, an isolated attempt to retain verified completion evidence across levels, tied all 75 fake-model pairs and was *not* promoted, because the fake model ignores its context. See the [evidence ledger](experiment-evidence.md) for exact protocol boundaries.
 
@@ -38,6 +38,6 @@ The experiment log also contains a **negative** result: EXP-022 produced one reg
 
 **What worked:** strict contract checks, observable progress criteria, reproducible public experiments and model-call efficiency. **What remains unresolved:** robust level-solving, object-level perception, persistent causal mechanism transfer, feedback from game-over/undo and reproducible end-to-end scoring provenance. These are research directions, **not completed features**.
 
-The reusable outcome for a software-engineering portfolio is an example of the full cycle: diagnose a production-like failure, isolate a hypothesis, define an observable metric, write regression tests, retain negative evidence, and make the release boundary explicit.
+The reusable engineering practice is the full cycle: diagnose a failure, isolate a hypothesis, define an observable metric, write regression tests, preserve negative evidence, and establish an explicit release boundary.
 
 [Architecture](architecture.md) · [Evidence ledger](experiment-evidence.md) · [Research PR #25](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/25) · [Unpromoted EXP-023](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/28)

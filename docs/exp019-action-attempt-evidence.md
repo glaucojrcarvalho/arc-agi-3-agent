@@ -1,7 +1,7 @@
 # EXP-019 — bounded action-attempt evidence for persistent reasoning
 
 **Status:** experimental prompt-only candidate. Baseline EXP-009 is unchanged.
-No official competition submission is authorized by this experiment.
+This public simulated-model ablation is not itself an official competition submission.
 
 ## Evidence and bottleneck
 
@@ -70,7 +70,7 @@ use Kaggle **save-and-run only**, on a separate private/offline notebook with
 RTX PRO 6000, pinned Python 3.12 image, the same FP8 model and wheelhouse.
 Review public per-game levels, first-level action, Qwen inference count
 and wallclock; do not infer gains from changed pixels. Never submit officially
-until the explicit Monday review.
+unless matched real-model evidence supports promotion.
 
 All artifacts here contain code and aggregate results of public games only:
 no credentials, personal context, private evaluation, raw action traces or
