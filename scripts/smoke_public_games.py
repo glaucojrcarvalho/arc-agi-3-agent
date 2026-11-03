@@ -13,6 +13,13 @@ import sys
 import types
 from pathlib import Path
 
+# Executing this file as a script puts scripts/ (not the repository src/)
+# on sys.path. Set both import roots explicitly; no PYTHONPATH is required.
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+for _root in (_PROJECT_ROOT, _PROJECT_ROOT / "src"):
+    if str(_root) not in sys.path:
+        sys.path.insert(0, str(_root))
+
 from arc_agi import Arcade, OperationMode
 from arcengine import FrameData, GameState
 
@@ -99,7 +106,6 @@ def main() -> int:
     agents.agent = agent_mod
     sys.modules["agents"] = agents
     sys.modules["agents.agent"] = agent_mod
-    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     direct = importlib.import_module("agent.exp001_agent").MyAgent
     adaptive = importlib.import_module("agent.exp002_agent").MyAgent
 
