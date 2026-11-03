@@ -8,6 +8,41 @@ of an improved competitive agent. Re-check live refs before each mutation.
 
 The matrix below is retained as the **pre-merge decision record**. Its gate for #30 is now satisfied: [PR #30](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/30) was merged into `main` as `feb4f6e3672f1f76467e8e72d97f1eb322a44a29` after the deadline, following independent 150/150 unit tests, a clean 87-file public preflight, compileall, three standalone packaging/syntax checks and a clean detached clone. The model-free EXP-000 default's Git blob remained byte-identical. Ancestor PRs #3, #7, #8, #9, #10, #11, #13, #14, #15 and #25 are closed/integrated; rejected EXP-011 PR #17 was closed with negative evidence retained. At the next post-deadline checkpoint, [PR #16](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/16) was merged as `d7eb2bb653b626f85b1d6cc2e188d3ac0fe1aa23` after a clean, tree-identical simulated merge, 154/154 tests, a clean 91-file public preflight, compilation and standalone packaging. The imported real-Qwen audit comparator is **read-only, historical and not a scoring promotion**; the earlier #16 row below records the pre-merge decision. Remaining isolated PRs #5, #12, #26 and #28 are **not automatically mergeable by evidence**. The authoritative state and next steps are in the [post-deadline handoff](portfolio-handoff-20261103.md).
 
+## Portfolio checkpoint — EXP-006 evaluator merged (2026-11-03 UTC)
+
+**Actual main merge:** [PR #12](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/12), merge commit
+[`f340b8e`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/commit/f340b8e86e8130ae3cebba1ea79ac981e10c5741),
+head `1970c836f6dcfcf19da8960df6cab2b369227072`. The historical
+stacked PR was retargeted to `main` after a **clean, no-commit dry-run merge**
+against `a88fd58829e6c15bf2e71adcf467342c01d49c56`; only
+`scripts/evaluate_public_exploration.py`,
+`tests/test_public_exploration_multiseed.py`, and
+`docs/exp006-multiseed-public-screen.md` changed. The predicted and
+actual main **Git tree IDs matched** at `680783649b9484ee3a00cae7295bc4ee11a68571`.
+
+The independent Python 3.12.15 checkout passed **157/157 unittest checks**,
+public preflight (**93 tracked paths**), `compileall`, standalone packaging
+and `py_compile` both before and after merge. The default
+`agent/my_agent.py` blob stayed `9695133008db25b63f042ea6371c34a57308a710`.
+A bounded **offline public-game** smoke of the merged evaluator used public
+`r11l`/`tn36`, seeds 0 and 1, random/novelty policies and 15 actions each:
+**8 sessions / 120 actions, 0 levels**. A separate correct EXP-005 standalone
+FAKE-model contract smoke ran **2 sessions / 10 actions / 10 simulated calls,
+0 levels**. This is interface validation, **not Qwen real or competitive
+scoring**. The first smoke mistakenly supplied EXP-000 to an EXP-005-only
+harness, producing a missing-`model_calls` error; re-running with the correct
+EXP-005 standalone agent passed. No claim of repairing that incompatible
+usage is made.
+
+**Remaining open PRs:** #5 (license hold), #26 (EXP-020/021 comparator),
+#28 (EXP-023 unvalidated). In an independent post-merge test, attempting a
+no-commit merge of #26 into `main` showed an **add/add conflict** on
+`scripts/compare_real_public_probes.py` with already merged #16. The
+dry-run was aborted. Retain the negative Qwen evidence; extract and review
+only compatible strict-seed validation/tests on a future isolated change.
+Do not merge the conflicting comparator or unreviewed notebook builder
+wholesale. No new official Kaggle submission or quota usage.
+
 ## Safety boundary and source of truth
 
 - Default `main`: `ecae40ddbcb6bba57625ddf76145a37a71a638e8` at snapshot.
