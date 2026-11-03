@@ -1,5 +1,30 @@
 # ARC-AGI-3 portfolio handoff — 2026-11-03
 
+## Subsequent portfolio gate — 2026-11-03 04:05 UTC
+
+[PR #33](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/33)
+merged as `24c9cecbb8283aa1965b167dfe7de4de22dc04b8` without modifying the
+agent policies. It adds a **read-only** remote-branch reachability/unique-commit
+report (`scripts/report_branch_lifecycle.py`), four disposable-local-repository
+regression tests and the [retention decision matrix](branch-retention-20261103.md).
+As of the post-merge fetched remote snapshot, **33 refs including main**,
+**17 additional reachable heads** and **15 unmerged heads** were present.
+**No remote branches were deleted** because deletion also requires verified
+evidence references and write authorization; remote Git credentials were
+unavailable to the isolated Remote Workbench clone. The remaining open
+PR is #5 (legal/attribution hold); no issues were open at the audit.
+
+Fresh head `96846229bec66fa94499120160bbf2fee65948ea` and post-merge
+worktrees passed **168/168 unit tests**, clean preflight (**97 tracked
+files**), `compileall`, standalone EXP-000 packaging and `py_compile`,
+and `git diff --check`. Public-only offline smoke ran the unchanged
+EXP-001 and EXP-002 policies on `ls20` and `vc33` with a dummy model:
+**4 sessions / 20 actions / 0 completed levels**, with no contract
+errors. This is **not** real-Qwen or Kaggle score evidence. The EXP-000
+agent blob remains `9695133008db25b63f042ea6371c34a57308a710`.
+The documented official EXP-019 v1 public score **0.34** and its
+historical submission are unchanged; no post-deadline Kaggle activity.
+
 This is a **post-deadline engineering report**, not a new ARC-AGI-3
 submission or a statement of final leaderboard position.
 
