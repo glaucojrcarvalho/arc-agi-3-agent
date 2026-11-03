@@ -3,6 +3,58 @@
 This is a **post-deadline engineering report**, not a new ARC-AGI-3
 submission or a statement of final leaderboard position.
 
+## Latest portfolio checkpoint — 2026-11-03 03:xx UTC
+
+**Current engineering merge:** [PR #32](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/32)
+merged into `main` as
+[`5826438d48f30898f36745f513e8177104a083f8`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/commit/5826438d48f30898f36745f513e8177104a083f8).
+A narrowly scoped extraction from EXP-020/021 enhanced the existing
+`scripts/compare_real_public_probes.py` rather than overwriting it with
+the conflicting branch version. Three paths changed: comparator, regression
+tests, [seed contract](seeded-probe-validation.md). This verifies explicit
+probe/row controller and environment seeds, authoritative milestone counters
+and public-only provenance; legacy unseeded output is explicitly labeled.
+**Neither new agent policy nor score improvement was introduced.**
+
+The branch exact HEAD `63e587ae8e51c8bca03ba0e6412b1515564a90b5`
+was tested in a fresh Remote Workbench worktree: Python 3.12.15,
+**164/164 unittests**, clean public preflight (**94 tracked files**),
+`compileall`, standalone build/`py_compile`, `git diff --check`.
+The prospective merge tree matched the tested tree at
+`35ebb2a5d8cf8a30fbc5cc9d94f18f9fa4b8a522`; post-merge
+independent verification reproduced the same results. The default
+EXP-000 agent blob remained `9695133008db25b63f042ea6371c34a57308a710`.
+No GitHub Actions were requested. The external `arc_agi` package was
+absent in this isolated environment: **no new live public-game smoke or
+Qwen-real probe was run**; standalone build is not gameplay validation.
+
+[PR #26](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/26)
+was **closed as archived experimental history**, with the original
+EXP-020/021 notebook changes and evidence retained in its branch and
+PR discussion. The seed-101 real-Qwen pair completed 1 vs 1 levels;
+the single completion was later by 13 actions in the candidate.
+[PR #28](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/28)
+was **closed without merge**; EXP-023 remains an unvalidated
+fake-model tie (6 vs 6), not a scoring promotion. Both experimental
+branches were retained. **One PR remains open: #5**, held on
+authorship/third-party attribution and the ARC Prize author-code
+licensing distinction; **zero GitHub issues open**.
+
+Read-only remote branch inventory: **32 actual remote branch refs**,
+**17 whose heads are reachable from `main`** and **15 with distinct
+unmerged commits** after #32; a local scratch tracking alias
+(`origin/exp020`) was excluded from this remote count.
+No branches were deleted or force-pushed. Competition artifact
+EXP-019 v1 `57915318`, public **0.34**, was not touched.
+No post-deadline Kaggle submission or quota use took place.
+
+The next competition should begin from the verified engineering main
+with a **separate** hypothesis branch, not from unvalidated EXP-022/023
+or an inference that the historical result predicts a new score.
+Review the new competition's own scoring, runtime, licenses, submission
+quota, data provenance and public vs hidden evaluation contract before
+any submission.
+
 ## Published engineering baseline
 
 - `main` merge: [`feb4f6e3672f1f76467e8e72d97f1eb322a44a29`](https://github.com/glaucojrcarvalho/arc-agi-3-agent/commit/feb4f6e3672f1f76467e8e72d97f1eb322a44a29), integrating reviewed [PR #30](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/30) with merge ancestry rather than a squash.
