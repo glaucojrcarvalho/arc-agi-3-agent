@@ -10,6 +10,7 @@ import argparse
 import hashlib
 import json
 import random
+import time
 from collections import Counter, deque
 from pathlib import Path
 
@@ -24,9 +25,10 @@ def as_frame(raw):
 
 
 class Policy:
-    def __init__(self, game_id: str, name: str):
+    def __init__(self, game_id: str, name: str, seed: int = 0):
+        seed_key = game_id if seed == 0 else f"{game_id}:{seed}"
         self.rng = random.Random(int.from_bytes(
-            hashlib.sha256(game_id.encode("utf-8")).digest()[:8], "big"
+            hashlib.sha256(seed_key.encode("utf-8")).digest()[:8], "big"
         ))
         self.name = name
         self.counts = Counter()
@@ -96,28 +98,33 @@ class Policy:
         return action, data
 
 
-def run_game(arc, game, name, max_actions):
-    env = arc.make(game, seed=0, save_recording=False)
+def run_game(arc, game, name, max_actions, *, seed=0):
+    env = arc.make(game, seed=seed, save_recording=False)
     if env is None:
         raise RuntimeError(f"could not load {game}")
     raw = env.reset()
-    policy = Policy(game, name)
+    policy = Policy(game, name, seed=seed)
     max_levels = 0
     seen_states = set()
-    for step in range(max_actions):
+    actions_taken = 0
+    started = time.monotonic()
+    for _ in range(max_actions):
         if raw is None or raw.state is GameState.WIN:
             break
         action, data = policy.choose(raw)
         action.set_data(data)
         raw = env.step(action, data=action.action_data.model_dump())
+        actions_taken += 1
         if raw is None:
             break
         max_levels = max(max_levels, raw.levels_completed)
         seen_states.add(frame_fingerprint(as_frame(raw)))
-    return {"game": game[:4], "policy": name, "actions": step+1,
-            "levels": max_levels, "unique_frames":len(seen_states),
-            "state":raw.state.name if raw else "NONE",
-            "effectful":policy.effects, "noops":policy.detected_noops}
+    return {"game": game[:4], "policy": name, "seed": seed,
+            "actions": actions_taken, "levels": max_levels,
+            "unique_frames": len(seen_states),
+            "state": raw.state.name if raw else "NONE",
+            "effectful": policy.effects, "noops": policy.detected_noops,
+            "wallclock_seconds": round(time.monotonic() - started, 3)}
 
 
 def main() -> int:
@@ -126,37 +133,46 @@ def main() -> int:
     parser.add_argument("--actions", type=int, default=80)
     parser.add_argument("--policies", nargs="+", default=["random","salient","novelty"])
     parser.add_argument("--games", nargs="*", default=None)
+    parser.add_argument("--seeds", nargs="+", type=int, default=[0])
     parser.add_argument("--output", type=Path)
     args=parser.parse_args()
     if not 1<=args.actions<=80:
         parser.error("actions must be 1..80")
+    if len(set(args.seeds)) != len(args.seeds) or any(x < 0 or x >= 2**31 for x in args.seeds):
+        parser.error("seeds must be unique nonnegative 31-bit integers")
     arc=Arcade(operation_mode=OperationMode.OFFLINE, environments_dir=str(args.environments_dir),
                recordings_dir="/tmp/arc3-public-exploration")
     games=sorted(info.game_id for info in arc.get_environments()
                  if args.games is None or any(info.game_id.startswith(prefix) for prefix in args.games))
     results=[]
     for name in args.policies:
-        for i,game in enumerate(games):
-            try:
-                r=run_game(arc, game, name, args.actions)
-            except Exception as exc:
-                print("EVAL_ERROR",name,game,type(exc).__name__,str(exc),flush=True)
-                raise
-            results.append(r)
-            if r["levels"]>0:
-                print("LEVEL_PROGRESS",json.dumps(r,sort_keys=True),flush=True)
-        selected=[row for row in results if row["policy"]==name]
+        for seed in args.seeds:
+            for game in games:
+                try:
+                    r=run_game(arc,game,name,args.actions,seed=seed)
+                except Exception as exc:
+                    print("EVAL_ERROR",name,seed,game,type(exc).__name__,str(exc),flush=True)
+                    raise
+                results.append(r)
+                if r["levels"]>0:
+                    print("LEVEL_PROGRESS",json.dumps(r,sort_keys=True),flush=True)
+        selected=[r for r in results if r["policy"]==name]
         print("EVAL_SUMMARY",json.dumps({
-          "policy":name, "games":len(selected),
-          "games_with_level_progress":sum(row["levels"]>0 for row in selected),
-          "total_levels":sum(row["levels"] for row in selected),
-          "unique_frames_sum":sum(row["unique_frames"] for row in selected),
-          "observed_noops":sum(row["noops"] for row in selected),
+          "policy":name,"seeds":args.seeds,"unique_games":len(games),
+          "sessions":len(selected),
+          "sessions_with_level_progress":sum(r["levels"]>0 for r in selected),
+          "games_with_level_progress":len({r["game"] for r in selected if r["levels"]>0}),
+          "total_levels":sum(r["levels"] for r in selected),
+          "actions_sum":sum(r["actions"] for r in selected),
+          "wallclock_seconds":round(sum(r["wallclock_seconds"] for r in selected),3),
+          "unique_frames_sum":sum(r["unique_frames"] for r in selected),
+          "observed_noops":sum(r["noops"] for r in selected),
         },sort_keys=True),flush=True)
     if args.output:
         args.output.parent.mkdir(parents=True,exist_ok=True)
         args.output.write_text(json.dumps({
-          "public_game_count":len(games),"action_cap":args.actions,"results":results
+          "public_game_count":len(games),"action_cap":args.actions,
+          "seeds":args.seeds,"results":results
         },indent=2)+"\n")
         print("EVAL_OUTPUT",args.output,flush=True)
     return 0
