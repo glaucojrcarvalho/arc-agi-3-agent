@@ -60,6 +60,8 @@ This diagram describes the **experimental Qwen source in `agent/exp005_agent.py`
 - **Research trail:** earlier experiments are linked through the [evidence ledger](docs/experiment-evidence.md). A draft PR is an experiment record, **not evidence of improved score**. See the [opt-in research quickstart](docs/research-quickstart.md).
 - **Portfolio branch lifecycle:** [read-only branch ancestry/unique-commit reporter](scripts/report_branch_lifecycle.py), [four regression tests](tests/test_branch_lifecycle_report.py) and [branch retention decision matrix](docs/branch-retention-20261103.md). Reachability is not permission to delete evidence; run on freshly fetched refs, with no automatic branch removal.
 
+- **Final portfolio closeout (2026-11-03):** [verified code merge, reproducibility, open PR/issue state and next-competition handoff](docs/portfolio-final-report-20261103.md).
+
 ## Run the stable baseline locally
 
 Requires Python 3.12. Running the tests does **not** require Kaggle credentials, Qwen weights, GPUs, or downloaded competition environments.
