@@ -2,9 +2,9 @@
 
 **Research engineering for interactive, unfamiliar environments** — an independent exploration of state-aware agents, local multimodal inference, persistent hypotheses, adaptive exploration, and reproducible evaluation for [ARC Prize 2026 — ARC-AGI-3](https://www.kaggle.com/competitions/arc-prize-2026-arc-agi-3).
 
-> **Research snapshot · 2 November 2026.** The default `agent/my_agent.py` remains the reproducible EXP-000 control. The repository additionally includes **separate opt-in Qwen research policies** and tested EXP-019-lineage engineering. Consolidating code for a portfolio is not a new competition submission. The best completed owner submission on Kaggle is **EXP-019 v1, public score 0.34** (displayed value, not a percentage conversion). This is not a claim of a winning solution, reproducible hidden-set improvement, or final leaderboard result.
+> **Portfolio baseline · 3 November 2026.** Engineering integration [#30](https://github.com/glaucojrcarvalho/arc-agi-3-agent/pull/30) was merged after the competition deadline. The default `agent/my_agent.py` remains the reproducible EXP-000 control. The repository additionally includes **separate opt-in Qwen research policies** and tested EXP-019-lineage engineering. Consolidating code for a portfolio is not a new competition submission. The best completed owner submission on Kaggle is **EXP-019 v1, public score 0.34** (displayed value, not a percentage conversion). This is not a claim of a winning solution, reproducible hidden-set improvement, or final leaderboard result.
 
-[**Engineering case study**](docs/portfolio-case-study.md) · [**Architecture and boundaries**](docs/architecture.md) · [**Experiment evidence**](docs/experiment-evidence.md) · [**Run locally**](docs/setup.md)
+[**Engineering case study**](docs/portfolio-case-study.md) · [**Architecture and boundaries**](docs/architecture.md) · [**Experiment evidence**](docs/experiment-evidence.md) · [**Run locally**](docs/setup.md) · [**Post-deadline handoff**](docs/portfolio-handoff-20261103.md)
 
 ## The engineering problem
 
